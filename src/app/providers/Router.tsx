@@ -1,18 +1,49 @@
-import { Navigate, Outlet } from "react-router-dom";
-import Cookies from "js-cookie";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuthStore } from "../../entities/user/store";
+import { PageLoader } from "../../shared/ui/PageLoader.tsx";
 
-export const ProtectedRoute = () => {
+export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { accessToken, isAuthChecked } = useAuthStore();
+  if (!isAuthChecked) {
+    return <PageLoader />;
+  }
 
-    if (!Cookies.get("access_refresh")) {
-        return <Navigate to="/login" replace />;
-    }
-    return <Outlet />;
+  if (!accessToken) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
 };
 
-export const PublicRoute = () => {
+export const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { accessToken, isAuthChecked, role } = useAuthStore();
+  const location = useLocation();
 
-    if (Cookies.get("access_refresh")) {
-        return <Navigate to="/requests" replace />;
-    }
-    return <Outlet />;
+  if (!isAuthChecked) {
+    return <PageLoader />;
+  }
+
+  if (!accessToken) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (role !== "ADMIN" && location.pathname === "/users") {
+    return <Navigate to="/requests" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+export const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  const { accessToken, isAuthChecked } = useAuthStore();
+
+  if (!isAuthChecked) {
+    return <PageLoader />;
+  }
+
+  if (accessToken) {
+    return <Navigate to="/requests" replace />;
+  }
+
+  return <>{children}</>;
 };
