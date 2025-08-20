@@ -1,6 +1,7 @@
-import { Box, Button } from "@mui/material";
-import React, { useState } from "react";
+import { Box, Button, Typography } from "@mui/material";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "@entities/user/store";
 import { theme } from "@app/providers/ThemeProvider/config/theme.ts";
 import { Template } from "@widgets/Template/Template.tsx";
 
@@ -8,7 +9,6 @@ export const TemplatesPage = () => {
   const [activeTemplate, setActiveTemplate] = useState<"sopd" | "email">(
     "sopd"
   );
-  const navigate = useNavigate();
 
   return (
     <Box
@@ -65,7 +65,6 @@ export const TemplatesPage = () => {
             borderRadius: "30px",
             border: "none",
             transition: "0.5s",
-
             "&:hover": {
               backgroundColor:
                 activeTemplate === "email"

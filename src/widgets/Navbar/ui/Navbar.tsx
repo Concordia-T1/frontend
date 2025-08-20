@@ -8,7 +8,7 @@ import { theme } from "@app/providers/ThemeProvider/config/theme.ts";
 import { NavbarTypography } from "../../../shared/ui/links/NavbarTypography.tsx";
 
 export const Navbar = () => {
-  const { logout, role, accessToken } = useAuthStore();
+  const { logout, role, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -24,7 +24,7 @@ export const Navbar = () => {
       <Toolbar>
         <Box component="img" src={logo} alt="icon" sx={{ height: 40, mr: 2 }} />
 
-        {accessToken && (
+        {isAuthenticated && (
           <Box sx={{ display: "flex", gap: 6, ml: 6 }}>
             {role === "MANAGER" && (
               <>
@@ -99,12 +99,11 @@ export const Navbar = () => {
 
         <Box sx={{ flexGrow: 1 }} />
 
-        {accessToken && (
+        {isAuthenticated && (
           <IconButton
             color="inherit"
             onClick={() => {
-              logout();
-              navigate("/login");
+              logout(navigate);
             }}
             sx={{
               padding: 0,

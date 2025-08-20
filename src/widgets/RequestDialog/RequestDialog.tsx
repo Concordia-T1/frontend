@@ -9,22 +9,28 @@ import {
   Chip,
   Snackbar,
   Alert,
+  CircularProgress,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import HorizontalRuleIcon from "@mui/icons-material/HorizontalRule";
 import ClearIcon from "@mui/icons-material/Clear";
 import UploadIcon from "@mui/icons-material/Upload";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Papa from "papaparse";
 import { theme } from "@app/providers/ThemeProvider/config/theme.ts";
 import { ActionButton } from "@shared/ui/buttons/ActionButton.tsx";
-import { fetchWithAuth } from "@shared/api/fetchWithAuth";
+import { fetchWithCppdAuth } from "@shared/api/fetchWithCppdAuth";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "@entities/user/store";
 import {
   type Request,
   type FetchResponse,
   type CreateRequestResponse,
-  type RequestsCollectionResponse,
+  type TemplatesCollectionResponse,
+  type TemplateRecord,
 } from "@app/types";
+import debounce from "lodash.debounce";
 
 interface RequestDialogProps {
   open: boolean;
@@ -40,7 +46,7 @@ export const RequestDialog = ({
   setError,
 }: RequestDialogProps) => {
   const [isMinimized, setIsMinimized] = useState(false);
-  const [managerEmail, setManagerEmail] = useState("manager@company.com");
+  const [managerEmail, setManagerEmail] = useState("");
   const [candidateEmails, setCandidateEmails] = useState<string[]>([]);
   const [candidateInput, setCandidateInput] = useState("");
   const [hasDraft, setHasDraft] = useState(false);
@@ -48,12 +54,71 @@ export const RequestDialog = ({
   const [candidateEmailError, setCandidateEmailError] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [timer, setTimer] = useState(15);
+  const [isLoading, setIsLoading] = useState(false);
   const [cancelToken, setCancelToken] = useState<() => void>(() => () => {});
+  const [templates, setTemplates] = useState<TemplateRecord[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(
+    null
+  );
   const navigate = useNavigate();
+  const { email: storedEmail, role, setEmail } = useAuthStore();
 
   const validateEmail = (email: string) =>
     /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim());
 
+  // Загрузка email менеджера и шаблонов
+  useEffect(() => {
+    if (open) {
+      const loadManagerEmail = async () => {
+        if (storedEmail && validateEmail(storedEmail)) {
+          setManagerEmail(storedEmail);
+          setManagerEmailError(false);
+        } else {
+          setIsLoading(true);
+          try {
+            const response: FetchResponse<{ email: string }> =
+              await fetchWithCppdAuth("/users/me", { method: "GET" }, navigate);
+            console.log("Ответ от /users/me:", response);
+            if (response.ok && response.data.email) {
+              setManagerEmail(response.data.email);
+              setEmail(response.data.email);
+              setManagerEmailError(!validateEmail(response.data.email));
+            } else {
+              setError("Не удалось загрузить email менеджера");
+              setManagerEmailError(true);
+            }
+          } catch (err: unknown) {
+            setError("Ошибка при загрузке email менеджера");
+            setManagerEmailError(true);
+          } finally {
+            setIsLoading(false);
+          }
+        }
+      };
+
+      const loadTemplates = async () => {
+        try {
+          console.log("[RequestDialog] Запрос списка шаблонов: /templates");
+          const response: FetchResponse<TemplatesCollectionResponse> =
+            await fetchWithCppdAuth("/templates", { method: "GET" }, navigate);
+          console.log("[RequestDialog] Ответ от /templates:", response);
+          if (response.ok) {
+            setTemplates(response.data.templates);
+            setSelectedTemplateId(response.data.templates[0]?.id || null);
+          } else {
+            setError("Не удалось загрузить шаблоны");
+          }
+        } catch (err: unknown) {
+          setError("Ошибка при загрузке шаблонов");
+        }
+      };
+
+      loadManagerEmail();
+      loadTemplates();
+    }
+  }, [open, navigate, setError, storedEmail, setEmail]);
+
+  // Таймер для подтверждения отправки
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     if (snackbarOpen && timer > 0) {
@@ -68,9 +133,35 @@ export const RequestDialog = ({
     };
   }, [snackbarOpen, timer]);
 
+  // Debounced функция для обработки ввода email-адресов
+  const processCandidateInput = useCallback(
+    debounce((value: string) => {
+      const emails = value
+        .split(/[\s,]+|\n/)
+        .filter((email) => email.trim() && validateEmail(email));
+      const remainingText = value
+        .split(/[\s,]+|\n/)
+        .filter((email) => email.trim() && !validateEmail(email))
+        .join(" ");
+
+      if (emails.length > 0) {
+        setCandidateEmails((prev) => [...new Set([...prev, ...emails])]);
+        setCandidateInput(remainingText);
+        setCandidateEmailError(remainingText.trim() !== "");
+        setHasDraft(true);
+      } else {
+        const hasInvalidEmail = value
+          .split(/[\s,]+|\n/)
+          .some((email) => email.trim() && !validateEmail(email));
+        setCandidateEmailError(hasInvalidEmail);
+      }
+    }, 300),
+    []
+  );
+
   const handleMinimize = () => {
     setIsMinimized(true);
-    if (managerEmail || candidateEmails.length > 0) {
+    if (managerEmail || candidateEmails.length > 0 || candidateInput) {
       setHasDraft(true);
     }
   };
@@ -79,19 +170,42 @@ export const RequestDialog = ({
     setIsMinimized(false);
     setCandidateEmails([]);
     setCandidateInput("");
-    setManagerEmail("manager@company.com");
+    setManagerEmail("");
     setHasDraft(false);
     setManagerEmailError(false);
     setCandidateEmailError(false);
     setSnackbarOpen(false);
     setTimer(15);
     cancelToken();
+    setTemplates([]);
+    setSelectedTemplateId(null);
     onClose();
   };
 
   const handleSend = async () => {
+    if (candidateInput.trim()) {
+      const emails = candidateInput
+        .split(/[\s,]+|\n/)
+        .filter((email) => email.trim() && validateEmail(email));
+      if (emails.length > 0) {
+        setCandidateEmails((prev) => [...new Set([...prev, ...emails])]);
+        setCandidateInput("");
+        setCandidateEmailError(false);
+      } else {
+        setCandidateEmailError(true);
+        setError("Неверный формат email кандидата в поле ввода");
+        return;
+      }
+    }
+
     if (!validateEmail(managerEmail)) {
       setManagerEmailError(true);
+      setError("Пожалуйста, введите корректный email менеджера");
+      return;
+    }
+    if (candidateEmails.length === 0) {
+      setCandidateEmailError(true);
+      setError("Добавьте хотя бы один email кандидата");
       return;
     }
 
@@ -104,58 +218,55 @@ export const RequestDialog = ({
   };
 
   const handleSendConfirmed = async () => {
+    setIsLoading(true);
     try {
-      const newRequests: Request[] = [];
-      for (const email of candidateEmails) {
-        const response: FetchResponse<CreateRequestResponse> =
-          await fetchWithAuth(
-            "/claims/issue",
-            {
-              method: "POST",
-              data: {
-                email,
-                manager_email: managerEmail,
-              },
-            },
-            navigate
-          );
-
-        if (!response.ok) {
-          setError(response.detail || "Ошибка при создании заявки");
-          setSnackbarOpen(false);
-          setTimer(15);
-          return;
-        }
-
-        newRequests.push(response.data.request);
-      }
-
-      const response: FetchResponse<RequestsCollectionResponse> =
-        await fetchWithAuth(
-          "/claims",
+      console.log("Отправка запроса на /claims/issue", {
+        candidates_emails: candidateEmails,
+        manager_email: managerEmail,
+        template_id: selectedTemplateId,
+      });
+      const response: FetchResponse<CreateRequestResponse> =
+        await fetchWithCppdAuth(
+          "/claims/issue",
           {
-            method: "GET",
-            params: {
-              page: 0,
-              size: 20,
-              sort: ["createdDate,desc"],
+            method: "POST",
+            headers: {
+              "X-User-Email": managerEmail,
+              "X-User-Role": role || "ROLE_MANAGER",
+            },
+            data: {
+              candidates_emails: candidateEmails,
+              manager_email: managerEmail,
+              template_id: selectedTemplateId,
             },
           },
           navigate
         );
 
+      console.log("Ответ от /claims/issue:", response);
+
       if (!response.ok) {
-        setError(response.detail || "Ошибка при обновлении списка заявок");
+        const errorMsg = response.detail || "Ошибка при создании заявки";
+        setError(errorMsg);
         setSnackbarOpen(false);
         setTimer(15);
         return;
       }
 
-      onCreate(response.data.requests);
+      const newRequests: Request[] = response.data.claims.map((claim) => ({
+        id: claim.id.toString(),
+        date: claim.created_at,
+        email: claim.candidate_email,
+        status: claim.status,
+        is_viewed: !!claim.responded_at,
+      }));
+
+      onCreate(newRequests);
       handleClose();
     } catch (err: unknown) {
       const error =
         err instanceof Error ? err.message : "Ошибка при отправке запроса";
+      console.error("Ошибка в handleSendConfirmed:", err);
       setError(error);
       setSnackbarOpen(false);
       setTimer(15);
@@ -165,25 +276,22 @@ export const RequestDialog = ({
       ) {
         navigate("/login");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleManagerEmailChange = (value: string) => {
     setManagerEmail(value);
     setManagerEmailError(!validateEmail(value) && value.trim() !== "");
-    if (value || candidateEmails.length > 0) {
+    if (value || candidateEmails.length > 0 || candidateInput) {
       setHasDraft(true);
     }
   };
 
   const handleCandidateInputChange = (value: string) => {
     setCandidateInput(value);
-    // Проверяем, есть ли некорректные email при вводе
-    const emails = value.split(/[\s,]+|\n/).filter((email) => email.trim());
-    const hasInvalidEmail = emails.some(
-      (email) => !validateEmail(email) && email.trim() !== ""
-    );
-    setCandidateEmailError(hasInvalidEmail);
+    processCandidateInput(value);
     if (value || managerEmail) {
       setHasDraft(true);
     }
@@ -192,12 +300,12 @@ export const RequestDialog = ({
   const handleCandidateInputKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === "Enter") {
       event.preventDefault();
-      // Разделяем ввод по пробелу, запятой или переносу строки
       const emails = candidateInput
         .split(/[\s,]+|\n/)
         .filter((email) => email.trim() && validateEmail(email));
       if (emails.length === 0 && candidateInput.trim()) {
         setCandidateEmailError(true);
+        setError("Неверный формат email кандидата");
       } else {
         setCandidateEmails((prev) => [...new Set([...prev, ...emails])]);
         setCandidateInput("");
@@ -282,18 +390,13 @@ export const RequestDialog = ({
             value={managerEmail}
             onChange={(e) => handleManagerEmailChange(e.target.value)}
             fullWidth
-            slotProps={{
-              input: {
-                readOnly: true,
-              },
-            }}
             margin="normal"
             variant="standard"
             error={managerEmailError}
             helperText={managerEmailError ? "Неверный формат e-mail" : ""}
+            disabled={isLoading}
             sx={{ bgcolor: theme.palette.brand.white, marginTop: "40px" }}
           />
-
           <TextField
             placeholder="Email кандидата(ов)"
             variant="standard"
@@ -336,6 +439,7 @@ export const RequestDialog = ({
             value={candidateInput}
             error={candidateEmailError}
             helperText={candidateEmailError ? "Неверный формат e-mail" : ""}
+            disabled={isLoading}
             sx={{
               "& .MuiInputBase-root": { display: "flex", flexWrap: "wrap" },
             }}
@@ -346,6 +450,7 @@ export const RequestDialog = ({
               variant="outlined"
               endIcon={<UploadIcon />}
               component="label"
+              disabled={isLoading}
               sx={{
                 whiteSpace: "nowrap",
                 bgcolor: theme.palette.brand.backgroundLight,
@@ -370,14 +475,18 @@ export const RequestDialog = ({
             <ActionButton
               onClick={handleSend}
               variant="contained"
-              disabled={candidateEmails.length === 0 || managerEmailError}
+              disabled={
+                isLoading ||
+                (candidateEmails.length === 0 && !candidateInput.trim())
+              }
+              startIcon={isLoading ? <CircularProgress size={20} /> : null}
               sx={{
                 bgcolor: theme.palette.brand.lightBlue,
                 borderRadius: "30px",
                 "&:hover": { bgcolor: theme.palette.brand.darkblue },
               }}
             >
-              Отправить
+              {isLoading ? "Отправка..." : "Отправить"}
             </ActionButton>
           </Box>
         </DialogContent>

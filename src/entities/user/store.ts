@@ -1,13 +1,14 @@
 import { create } from "zustand";
-import Cookies from "js-cookie";
 
 export interface AuthState {
-  accessToken: string | null;
-  refreshToken: string | null;
+  isAuthenticated: boolean;
   role: "MANAGER" | "ADMIN" | null;
+  userId: number | null;
+  email: string | null;
   isAuthChecked: boolean;
-  setTokens: (accessToken: string | null, refreshToken: string | null) => void;
+  setAuthenticated: (isAuthenticated: boolean) => void;
   setRole: (role: "MANAGER" | "ADMIN" | null) => void;
+  setUserData: (id: number | null, email: string | null) => void;
   setAuthChecked: (checked: boolean) => void;
   logout: (navigate?: (path: string) => void) => Promise<void>;
   refreshTrigger: number;
@@ -15,61 +16,27 @@ export interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  accessToken: Cookies.get("access_token") || null,
-  refreshToken: Cookies.get("refresh_token") || null,
-  role: Cookies.get("role") as "MANAGER" | "ADMIN" | null,
+  isAuthenticated: false,
+  role: null,
+  userId: null,
+  email: null,
   isAuthChecked: false,
-  setTokens: (accessToken, refreshToken) => {
-    if (accessToken && refreshToken) {
-      Cookies.set("access_token", accessToken, {
-        expires: 7,
-        secure: true,
-        sameSite: "strict",
-        path: "/",
-      });
-      Cookies.set("refresh_token", refreshToken, {
-        expires: 7,
-        secure: true,
-        sameSite: "strict",
-        path: "/",
-      });
-    } else {
-      Cookies.remove("access_token", { path: "/" });
-      Cookies.remove("refresh_token", { path: "/" });
-    }
-    set({ accessToken, refreshToken });
-  },
-  setRole: (role) => {
-    if (role) {
-      Cookies.set("role", role, {
-        expires: 7,
-        secure: true,
-        sameSite: "strict",
-        path: "/",
-      });
-    } else {
-      Cookies.remove("role", { path: "/" });
-    }
-    set({ role });
-  },
+
+  setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
+
+  setRole: (role) => set({ role }),
+
+  setUserData: (id, email) => set({ userId: id, email }),
+
   setAuthChecked: (checked) => set({ isAuthChecked: checked }),
+
   logout: async (navigate) => {
     try {
-      // if (useAuthStore.getState().role === "ADMIN") {
-      //   await fetchWithAuth("/auth/revoke?id=me", {
-      //     method: "DELETE",
-      //     credentials: "include",
-      //   });
-      // }
-
-      Object.keys(Cookies.get()).forEach((cookieName) => {
-        Cookies.remove(cookieName, { path: "/" });
-      });
-
       set({
-        accessToken: null,
-        refreshToken: null,
+        isAuthenticated: false,
         role: null,
+        userId: null,
+        email: null,
         isAuthChecked: true,
       });
 
@@ -77,13 +44,15 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (err) {
       console.error("Logout error:", err);
       set({
-        accessToken: null,
-        refreshToken: null,
+        isAuthenticated: false,
         role: null,
+        userId: null,
+        email: null,
         isAuthChecked: true,
       });
     }
   },
+
   refreshTrigger: 0,
   setRefreshTrigger: () =>
     set((state) => ({ refreshTrigger: state.refreshTrigger + 1 })),

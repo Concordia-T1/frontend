@@ -1,49 +1,33 @@
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuthStore } from "../../entities/user/store";
-import { PageLoader } from "../../shared/ui/PageLoader.tsx";
+import { JSX } from "react";
 
-export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { accessToken, isAuthChecked } = useAuthStore();
-  if (!isAuthChecked) {
-    return <PageLoader />;
-  }
+interface RouteProps {
+  children: JSX.Element;
+  isAuthenticated?: boolean;
+}
 
-  if (!accessToken) {
-    return <Navigate to="/login" replace />;
-  }
+export const ProtectedRoute = ({ children, isAuthenticated }: RouteProps) => {
+  const storeAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const finalAuthenticated = isAuthenticated ?? storeAuthenticated;
 
-  return <>{children}</>;
+  return finalAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
-export const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { accessToken, isAuthChecked, role } = useAuthStore();
-  const location = useLocation();
+export const AdminRoute = ({ children, isAuthenticated }: RouteProps) => {
+  const storeAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const role = useAuthStore((state) => state.role);
+  const finalAuthenticated = isAuthenticated ?? storeAuthenticated;
 
-  if (!isAuthChecked) {
-    return <PageLoader />;
-  }
-
-  if (!accessToken) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (role !== "ADMIN" && location.pathname === "/users") {
-    return <Navigate to="/requests" replace />;
-  }
-
-  return <>{children}</>;
+  return finalAuthenticated && role === "ADMIN" ? (
+    children
+  ) : (
+    <Navigate to="/login" replace />
+  );
 };
 
-export const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  const { accessToken, isAuthChecked } = useAuthStore();
+export const PublicRoute = ({ children }: RouteProps) => {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
-  if (!isAuthChecked) {
-    return <PageLoader />;
-  }
-
-  if (accessToken) {
-    return <Navigate to="/requests" replace />;
-  }
-
-  return <>{children}</>;
+  return isAuthenticated ? <Navigate to="/requests" replace /> : children;
 };

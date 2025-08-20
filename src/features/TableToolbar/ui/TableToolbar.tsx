@@ -29,7 +29,7 @@ export const TableToolbar = ({
     <Toolbar sx={{ display: "flex", gap: 2 }}>
       <FilledButton onClick={onAddRequest} sx={{ gap: 1 }}>
         <SendIcon />
-        Отправить запрос
+        Отправить заявку
       </FilledButton>
       <SearchBar onSearchChange={onSearch} />
       <div style={{ flexGrow: 1 }} />

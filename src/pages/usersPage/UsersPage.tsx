@@ -20,7 +20,7 @@ export const UsersPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const navigate = useNavigate();
-  const { role, accessToken, refreshTrigger } = useAuthStore();
+  const { role, isAuthenticated } = useAuthStore();
 
   const handleStateChange = (
     id: string,
@@ -32,7 +32,7 @@ export const UsersPage = () => {
     setFilteredUsers((prev) =>
       prev.map((user) => (user.id === id ? { ...user, state: newState } : user))
     );
-    console.log("Updated local state for user", id, "to", newState);
+    console.log("[UsersPage] Updated local state for user", id, "to", newState);
   };
 
   const handleSearchChange = (search: string) => {
@@ -45,29 +45,27 @@ export const UsersPage = () => {
 
   useEffect(() => {
     const fetchUsers = async () => {
+      if (!isAuthenticated) {
+        setError("Не авторизован. Пожалуйста, войдите в систему.");
+        console.error("[UsersPage] User is not authenticated");
+        navigate("/login");
+        return;
+      }
+
       if (role !== "ADMIN") {
         setError(
           "Доступ к списку пользователей разрешен только администраторам"
         );
-        console.error("User role is not ADMIN:", role);
-        return;
-      }
-
-      if (!accessToken) {
-        setError(
-          "Отсутствует токен авторизации. Пожалуйста, войдите в систему."
-        );
-        console.error("No access token found in cookies");
+        console.error("[UsersPage] User role is not ADMIN:", role);
         navigate("/login");
         return;
       }
 
       try {
         console.log(
-          "Sending request to /api/auth-service/v1/accounts with token:",
-          accessToken
+          "[UsersPage] Sending request to /api/auth-service/v1/accounts"
         );
-        const response = await fetchWithAuth(
+        const response = await fetchWithAuth<AccountsCollectionResponse>(
           "/accounts",
           {
             method: "GET",
@@ -81,45 +79,52 @@ export const UsersPage = () => {
           navigate
         );
 
-        console.log("API response:", response.data);
+        console.log("[UsersPage] API response:", response);
 
-        const data: AccountsCollectionResponse = response.data;
-        if (!data.ok) {
-          setError(data.detail || "Ошибка при загрузке пользователей");
-          console.error("API error:", data.detail, data.validation_errors);
+        if (!response.ok) {
+          setError(response.detail || "Ошибка при загрузке пользователей");
+          console.error(
+            "[UsersPage] API error:",
+            response.detail,
+            response.data?.validation_errors
+          );
           return;
         }
 
-        if (!data.accounts || data.accounts.length === 0) {
+        if (!response.data?.accounts || response.data.accounts.length === 0) {
           setError("Нет доступных аккаунтов в базе данных");
-          console.warn("API returned empty accounts array");
+          console.warn("[UsersPage] API returned empty accounts array");
           return;
         }
 
-        const mappedUsers: User[] = data.accounts.map((account) => {
-          if (!account.state) {
+        const mappedUsers: User[] = response.data.accounts.map((account) => {
+          if (!account.id || !account.state) {
             console.warn(
-              `Account ${account.id} has no state field in API response`
+              `[UsersPage] Account ${
+                account.id || "unknown"
+              } has missing id or state field in API response`
             );
           }
           return {
-            id: account.id.toString(),
-            email: account.email,
-            state: account.state as "STATE_ENABLED" | "STATE_DISABLED",
+            id: account.id?.toString() || "",
+            email: account.email || "",
+            state:
+              (account.state as "STATE_ENABLED" | "STATE_DISABLED") ||
+              "STATE_DISABLED",
           };
         });
 
         setUsers(mappedUsers);
         setFilteredUsers(mappedUsers);
-        console.log("Mapped users:", mappedUsers);
+        console.log("[UsersPage] Mapped users:", mappedUsers);
       } catch (err: any) {
         setError(err.message || "Ошибка соединения с сервером");
-        console.error("Fetch error:", err);
+        console.error("[UsersPage] Fetch error:", err);
       }
     };
 
     fetchUsers();
-  }, [navigate, role, accessToken, refreshTrigger]);
+  }, [navigate, role, isAuthenticated]);
 
   const handleCreateAccount = () => {
     navigate("/create-user");

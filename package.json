@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ckeditor/ckeditor5-build-classic": "^41.4.2",
-    "@ckeditor/ckeditor5-react": "^11.0.0",
+    "@ckeditor/ckeditor5-react": "nightly",
+    "@ckeditor/ckeditor5-build-classic": "nightly",
     "@draft-js-plugins/anchor": "^4.2.1",
     "@draft-js-plugins/editor": "^4.1.4",
     "@emotion/react": "^11.14.0",
@@ -25,6 +25,7 @@
     "draft-js": "^0.11.7",
     "draftjs-to-html": "^0.9.1",
     "js-cookie": "^3.0.5",
+    "lodash.debounce": "^4.0.8",
     "lottie-react": "^2.4.1",
     "papaparse": "^5.5.3",
     "react": "^19.1.1",

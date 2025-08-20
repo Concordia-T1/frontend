@@ -17,6 +17,16 @@ interface AuthResponse {
   validation_errors: Array<{ field: string; detail: string }> | null;
 }
 
+interface AccountResponse {
+  ok: boolean;
+  detail: string | null;
+  account: {
+    id: number;
+    email: string;
+    role: string;
+  };
+}
+
 export const LoginPage = () => {
   const {
     control,
@@ -26,15 +36,19 @@ export const LoginPage = () => {
     defaultValues: { email: "", password: "" },
   });
   const navigate = useNavigate();
-  const setTokens = useAuthStore((state: AuthState) => state.setTokens);
   const setRole = useAuthStore((state: AuthState) => state.setRole);
+  const setUserData = useAuthStore((state: AuthState) => state.setUserData);
+  const setAuthenticated = useAuthStore(
+    (state: AuthState) => state.setAuthenticated
+  );
   const [serverError, setServerError] = useState<string | null>(null);
 
   const onSubmit = async (data: FormValues) => {
     setServerError(null);
 
     try {
-      const response = await fetchWithAuth("/auth/login", {
+      console.log("Отправка запроса на /auth/login", data);
+      const loginResponse = await fetchWithAuth<AuthResponse>("/auth/login", {
         method: "POST",
         data: {
           email: data.email,
@@ -42,41 +56,63 @@ export const LoginPage = () => {
         },
       });
 
-      const responseData: AuthResponse = response.data;
-      if (!responseData.ok) {
-        if (responseData.validation_errors) {
+      console.log("Ответ от /auth/login:", loginResponse);
+
+      if (!loginResponse.ok) {
+        const responseData = loginResponse.data;
+        if (responseData?.validation_errors) {
           const errorMessages = responseData.validation_errors
             .map((err) => `${err.field}: ${err.detail}`)
             .join("; ");
           setServerError(errorMessages);
         } else {
           setServerError(
-            responseData.detail ===
+            responseData?.detail ===
               "BAD_CREDENTIALS: Username and/or password is incorrect"
               ? "Неправильный e-mail или пароль"
-              : responseData.detail || "Ошибка авторизации"
+              : responseData?.detail || "Ошибка авторизации"
           );
         }
+        setAuthenticated(false);
         return;
       }
 
-      const accountResponse = await fetchWithAuth("/accounts/me", {
-        method: "GET",
-      });
+      setAuthenticated(true);
+      console.log(
+        "Пользователь аутентифицирован, isAuthenticated установлено в true"
+      );
 
-      if (!accountResponse.data.ok) {
+      console.log("Отправка запроса на /accounts/me");
+      const accountResponse = await fetchWithAuth<AccountResponse>(
+        "/accounts/me",
+        {
+          method: "GET",
+        }
+      );
+      console.log("Ответ от /accounts/me:", accountResponse);
+
+      if (!accountResponse.ok || !accountResponse.data) {
+        setAuthenticated(false);
         setServerError(
-          accountResponse.data.detail || "Ошибка получения данных пользователя"
+          accountResponse.detail || "Ошибка получения данных пользователя"
         );
         return;
       }
 
-      const { role } = accountResponse.data.account;
-      setRole(role.replace("ROLE_", "") as "MANAGER" | "ADMIN");
-      setTokens("set_by_cookie", "set_by_cookie"); // Токены устанавливаются сервером через cookies
+      const { role, id, email } = accountResponse.data.account;
+      if (!id || !email || !role) {
+        setAuthenticated(false);
+        setServerError("Некорректные данные пользователя");
+        return;
+      }
 
+      console.log("Сохранение данных пользователя:", { id, email, role });
+      setRole(role.replace("ROLE_", "") as "MANAGER" | "ADMIN");
+      setUserData(id, email);
       navigate("/requests");
     } catch (error: unknown) {
+      console.error("Подробная ошибка:", error);
+      setAuthenticated(false);
       setServerError("Ошибка соединения с сервером");
     }
   };
@@ -107,7 +143,7 @@ export const LoginPage = () => {
           Авторизация
         </Typography>
         <Box
-          component="div"
+          component="form"
           onSubmit={handleSubmit(onSubmit)}
           sx={{ mt: 2, width: "100%" }}
         >
@@ -139,7 +175,7 @@ export const LoginPage = () => {
             control={control}
             rules={{
               required: "Введите пароль",
-              minLength: { value: 5, message: "Минимум 6 символов" },
+              minLength: { value: 5, message: "Минимум 5 символов" },
               maxLength: { value: 32, message: "Максимум 32 символа" },
             }}
             render={({ field }) => (
@@ -165,11 +201,7 @@ export const LoginPage = () => {
           <Box
             sx={{ width: "100%", display: "flex", justifyContent: "center" }}
           >
-            <OutlinedButton
-              type="button"
-              onClick={handleSubmit(onSubmit)}
-              sx={{ mt: 1 }}
-            >
+            <OutlinedButton type="submit" sx={{ mt: 1 }}>
               Войти
             </OutlinedButton>
           </Box>
