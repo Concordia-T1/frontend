@@ -15,7 +15,7 @@ export const TemplatesPage = () => {
       sx={{
         p: { xs: 1, sm: 2 },
         mt: { xs: 1, sm: 3 },
-        maxWidth: "1000px",
+        maxWidth: "70%",
         margin: "0 auto",
         boxSizing: "border-box",
         display: "flex",

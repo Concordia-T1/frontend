@@ -1,13 +1,40 @@
-import { Box, Typography } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { Box, Typography, Alert } from "@mui/material";
+import { useNavigate, useLocation } from "react-router-dom";
 import { OutlinedButton } from "@shared/ui/buttons/OutlinedButton.tsx";
 import { theme } from "@app/providers/ThemeProvider/config/theme.ts";
+import { useState } from "react";
+import { fetchWithCppdAuth } from "../../shared/api/fetchWithCppdAuth";
 
 export const ConsentPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [serverError, setServerError] = useState<string | null>(null);
 
-  const onSubmit = () => {
-    // TODO: Отправка на бэк
+  const onSubmit = async (accepted: boolean) => {
+    setServerError(null);
+    const inviteParams = location.state?.inviteParams;
+    if (!inviteParams?.epk || !inviteParams?.ctx || !inviteParams?.sig) {
+      setServerError("Недействительная ссылка");
+      navigate("/consent-error");
+      return;
+    }
+
+    const response = await fetchWithCppdAuth("/claims", {
+      method: "POST",
+      data: {
+        epk: inviteParams.epk,
+        ctx: inviteParams.ctx,
+        sig: inviteParams.sig,
+        accepted,
+      },
+    });
+
+    if (!response.ok) {
+      setServerError(response.detail || "Ошибка отправки согласия");
+      navigate("/consent-error");
+      return;
+    }
+
     navigate("/consent-success");
   };
 
@@ -45,9 +72,18 @@ export const ConsentPage = () => {
         Согласие
       </Typography>
 
+      {serverError && (
+        <Alert
+          severity="error"
+          sx={{ width: "100%", mt: 2, maxWidth: "600px" }}
+        >
+          {serverError}
+        </Alert>
+      )}
+
       <Box sx={{ mt: 5, display: "flex", justifyContent: "center", gap: 8 }}>
         <OutlinedButton
-          onClick={onSubmit}
+          onClick={() => onSubmit(false)}
           sx={{
             gap: 1,
             color: theme.palette.brand.secondary,
@@ -56,7 +92,7 @@ export const ConsentPage = () => {
         >
           Отказаться
         </OutlinedButton>
-        <OutlinedButton onClick={onSubmit} sx={{ gap: 1 }}>
+        <OutlinedButton onClick={() => onSubmit(true)} sx={{ gap: 1 }}>
           Согласиться
         </OutlinedButton>
       </Box>

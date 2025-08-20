@@ -52,7 +52,7 @@ export const RequestItem = ({
   };
 
   const statusLabels: Record<Request["status"], string> = {
-    STATUS_QUEUED: "В очереди",
+    STATUS_QUEUED: "Ожидание",
     STATUS_WAITING: "Ожидание",
     STATUS_CONSENT: "Согласие",
     STATUS_REFUSED: "Отказ",
@@ -60,7 +60,7 @@ export const RequestItem = ({
   };
 
   const statusColors: Record<Request["status"], string> = {
-    STATUS_QUEUED: theme.palette.brand.pastelBlue,
+    STATUS_QUEUED: theme.palette.brand.pastelOrange,
     STATUS_WAITING: theme.palette.brand.pastelOrange,
     STATUS_CONSENT: theme.palette.brand.pastelGreen,
     STATUS_REFUSED: theme.palette.brand.pastelRed,
@@ -108,16 +108,23 @@ export const RequestItem = ({
       >
         {request.email}
       </TableCell>
-      <TableCell sx={{ width: { xs: "30%", sm: "200px" } }}>
+      <TableCell
+        sx={{
+          width: { xs: "30%", sm: "200px" },
+        }}
+      >
         <Chip
           label={statusLabels[request.status]}
           sx={{
             backgroundColor: statusColors[request.status],
-            color: theme.palette.brand.white,
           }}
         />
       </TableCell>
-      <TableCell sx={{ width: { xs: "10%", sm: "20px" } }}>
+      <TableCell
+        sx={{
+          width: { xs: "10%", sm: "20px" },
+        }}
+      >
         {isResponseReceived && !request.is_viewed && (
           <Box
             component="span"

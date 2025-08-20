@@ -1,5 +1,6 @@
 import axios from "axios";
 import type { FetchResponse } from "@app/types";
+import { useAuthStore } from "@entities/user/store";
 
 export const fetchWithCppdAuth = async <T>(
   url: string,
@@ -14,19 +15,18 @@ export const fetchWithCppdAuth = async <T>(
 ): Promise<FetchResponse<T>> => {
   const fullUrl = `/api/cppd-service/v1${url}`;
 
-  // Логирование начала запроса
   console.log(
     `[fetchWithCppdAuth] Начало запроса: ${options.method || "GET"} ${fullUrl}`
   );
   console.log("[fetchWithCppdAuth] Заголовки:", options.headers || {});
   console.log("[fetchWithCppdAuth] Параметры:", options.params || {});
 
-  try {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      ...options.headers,
-    };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...options.headers,
+  };
 
+  try {
     const response = await axios({
       url: fullUrl,
       method: options.method || "GET",
@@ -36,7 +36,6 @@ export const fetchWithCppdAuth = async <T>(
       withCredentials: true,
     });
 
-    // Логирование успешного ответа
     console.log(`[fetchWithCppdAuth] Успешный ответ от ${fullUrl}:`, {
       status: response.status,
       data: response.data,
@@ -54,19 +53,22 @@ export const fetchWithCppdAuth = async <T>(
     const status = err.response?.status;
     let errorMessage: string;
 
-    // Логирование ошибки
     console.error(`[fetchWithCppdAuth] Ошибка при запросе ${fullUrl}:`, {
       status,
       error: err.message,
       responseData: err.response?.data,
       code: err.code,
     });
+    console.error(
+      `[fetchWithCppdAuth] Полный ответ сервера:`,
+      err.response?.data
+    );
 
     switch (status) {
       case 401:
         errorMessage = "Сессия истекла. Пожалуйста, войдите заново.";
         if (navigate) {
-          navigate("/login");
+          useAuthStore.getState().logout(navigate);
         }
         break;
       case 400:

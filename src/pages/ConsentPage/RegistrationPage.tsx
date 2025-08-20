@@ -1,10 +1,11 @@
 import { Box, Paper, Typography, TextField, Alert } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { useHookFormMask } from "use-mask-input";
 import { isValid, parse, isBefore, subYears } from "date-fns";
 import { OutlinedButton } from "../../shared/ui/buttons/OutlinedButton.tsx";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchWithAuth } from "../../shared/api/fetchWithAuth";
 
 interface FormValues {
   lastName: string;
@@ -17,7 +18,9 @@ interface FormValues {
 
 export const RegistrationPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [isLinkValid, setIsLinkValid] = useState<boolean | null>(null);
 
   const {
     control,
@@ -37,11 +40,44 @@ export const RegistrationPage = () => {
 
   const registerWithMask = useHookFormMask(control.register);
 
+  // Проверка валидности ссылки
+  useEffect(() => {
+    const verifyInviteLink = async () => {
+      const params = new URLSearchParams(location.search);
+      const epk = params.get("epk");
+      const ctx = params.get("ctx");
+      const sig = params.get("sig");
+
+      if (!epk || !ctx || !sig) {
+        setServerError("Недействительная ссылка");
+        setIsLinkValid(false);
+        navigate("/consent-error");
+        return;
+      }
+
+      const response = await fetchWithAuth("/auth/invite/verify", {
+        method: "POST",
+        data: { epk, ctx, sig },
+      });
+
+      if (!response.ok) {
+        setServerError(response.detail || "Недействительная ссылка");
+        setIsLinkValid(false);
+        navigate("/consent-error");
+        return;
+      }
+
+      setIsLinkValid(true);
+    };
+
+    verifyInviteLink();
+  }, [location, navigate]);
+
   const validateDate = (value: string) => {
     const parsedDate = parse(value, "dd.MM.yyyy", new Date());
     const minDate = new Date(1900, 0, 1); // 01.01.1900
     const maxDate = new Date(2025, 7, 15); // 15.08.2025
-    const minAgeDate = subYears(maxDate, 14); // 14 лет назад от 15.08.2025
+    const minAgeDate = subYears(maxDate, 14); // 14 лет назад
 
     if (!isValid(parsedDate)) {
       return "Неверный формат даты (ДД.ММ.ГГГГ)";
@@ -58,16 +94,43 @@ export const RegistrationPage = () => {
     return true;
   };
 
-  const onSubmit = (data: FormValues) => {
+  const onSubmit = async (data: FormValues) => {
     setServerError(null);
     const e164Phone = data.phone.replace(/\D/g, "");
+    const params = new URLSearchParams(location.search);
     const formattedData = {
-      ...data,
+      lastName: data.lastName,
+      firstName: data.firstName,
+      middleName: data.middleName || undefined,
+      birthDate: data.birthDate,
       phone: `+${e164Phone}`,
+      email: data.email,
+      epk: params.get("epk"),
+      ctx: params.get("ctx"),
+      sig: params.get("sig"),
     };
-    console.log("Отправленные данные:", formattedData);
-    navigate("/consent");
+
+    const response = await fetchWithAuth("/auth/register", {
+      method: "POST",
+      data: formattedData,
+    });
+
+    if (!response.ok) {
+      setServerError(response.detail || "Ошибка регистрации");
+      navigate("/consent-error");
+      return;
+    }
+
+    navigate("/consent", { state: { inviteParams: formattedData } });
   };
+
+  if (isLinkValid === null) {
+    return <Typography>Проверка ссылки...</Typography>;
+  }
+
+  if (isLinkValid === false) {
+    return null; // navigate уже перенаправит на /consent-error
+  }
 
   return (
     <Box

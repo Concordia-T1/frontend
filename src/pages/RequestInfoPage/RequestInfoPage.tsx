@@ -225,8 +225,8 @@ export const RequestInfoPage = () => {
                   : request.status === "STATUS_WAITING"
                   ? "Ожидание"
                   : request.status === "STATUS_QUEUED"
-                  ? "В очереди"
-                  : "Таймаут"
+                  ? "Ожидание"
+                  : "Ожидание"
               }
               sx={{
                 backgroundColor:
@@ -237,8 +237,8 @@ export const RequestInfoPage = () => {
                     : request.status === "STATUS_WAITING"
                     ? theme.palette.brand.pastelOrange
                     : request.status === "STATUS_QUEUED"
-                    ? theme.palette.brand.pastelBlue
-                    : theme.palette.brand.pastelBlue,
+                    ? theme.palette.brand.pastelOrange
+                    : theme.palette.brand.pastelOrange,
               }}
             />
           </Box>

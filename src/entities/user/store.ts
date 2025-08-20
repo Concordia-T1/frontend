@@ -31,26 +31,26 @@ export const useAuthStore = create<AuthState>((set) => ({
   setAuthChecked: (checked) => set({ isAuthChecked: checked }),
 
   logout: async (navigate) => {
-    try {
-      set({
-        isAuthenticated: false,
-        role: null,
-        userId: null,
-        email: null,
-        isAuthChecked: true,
-      });
-
-      if (navigate) navigate("/login");
-    } catch (err) {
-      console.error("Logout error:", err);
-      set({
-        isAuthenticated: false,
-        role: null,
-        userId: null,
-        email: null,
-        isAuthChecked: true,
-      });
-    }
+    // try {
+    //   await fetchWithCppdAuth("/auth/logout", { method: "POST" });
+    //   set({
+    //     isAuthenticated: false,
+    //     role: null,
+    //     userId: null,
+    //     email: null,
+    //     isAuthChecked: true,
+    //   });
+    //   if (navigate) navigate("/login");
+    // } catch (err) {
+    //   console.error("Logout error:", err);
+    //   set({
+    //     isAuthenticated: false,
+    //     role: null,
+    //     userId: null,
+    //     email: null,
+    //     isAuthChecked: true,
+    //   });
+    // }
   },
 
   refreshTrigger: 0,

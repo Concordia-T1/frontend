@@ -74,7 +74,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/registration" element={<RegistrationPage />} />
+        <Route
+          path="/invite"
+          element={
+            <PublicRoute>
+              <RegistrationPage />
+            </PublicRoute>
+          }
+        />
         <Route path="/consent" element={<ConsentPage />} />
         <Route path="/consent-success" element={<ConsentSuccess />} />
         <Route path="/consent-error" element={<ConsentErrorPage />} />

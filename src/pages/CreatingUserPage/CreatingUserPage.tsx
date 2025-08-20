@@ -40,7 +40,7 @@ export const CreatingUserPage = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:8080/api/auth-service/v1/accounts/create",
+        "http://localhost:5173/api/auth-service/v1/accounts/create",
         {
           method: "POST",
           headers: {
