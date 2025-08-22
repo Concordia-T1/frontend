@@ -71,22 +71,17 @@ export const UserItem = ({
 
       console.log("Disable response:", response.data);
 
-      if (!response.data.ok) {
+      if (!response.ok) {
         setError(
-          response.data.detail || "Ошибка при отключении прав пользователя"
-        );
-        console.error(
-          "API error:",
-          response.data.detail,
-          response.data.validation_errors
+          response.detail || "Ошибка при отключении прав пользователя"
         );
         return;
       }
 
       onStateChange(user.id, "STATE_DISABLED");
       setOpenDialog(false);
-    } catch (err: any) {
-      setError(err.message || "Ошибка при отключении прав пользователя");
+    } catch (err: unknown) {
+      setError("Ошибка при отключении прав пользователя");
       console.error("Disable error:", err);
     }
   };
@@ -109,21 +104,16 @@ export const UserItem = ({
 
       console.log("Enable response:", response.data);
 
-      if (!response.data.ok) {
+      if (!response.ok) {
         setError(
-          response.data.detail || "Ошибка при восстановлении прав пользователя"
-        );
-        console.error(
-          "API error:",
-          response.data.detail,
-          response.data.validation_errors
+          response.detail || "Ошибка при восстановлении прав пользователя"
         );
         return;
       }
 
       onStateChange(user.id, "STATE_ENABLED");
-    } catch (err: any) {
-      setError(err.message || "Ошибка при восстановлении прав пользователя");
+    } catch (err: unknown) {
+      setError("Ошибка при восстановлении прав пользователя");
       console.error("Enable error:", err);
     }
   };
