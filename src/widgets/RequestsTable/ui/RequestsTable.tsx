@@ -9,9 +9,9 @@ import {
   Checkbox,
   Paper,
 } from "@mui/material";
-import { RequestItem } from "@features/RequestItem/RequestItem.tsx";
-import { theme } from "@app/providers/ThemeProvider/config/theme.ts";
-import { type Request } from "@app/types.ts";
+import { RequestItem } from "../../../features/RequestItem/RequestItem.tsx";
+import { theme } from "../../../app/providers/ThemeProvider/config/theme.ts";
+import { type Request } from "../../../app/types.ts";
 
 interface RequestsTableProps {
   requests: Request[];

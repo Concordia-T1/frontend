@@ -10,9 +10,9 @@ import {
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FilledButton } from "../../shared/ui/buttons/FilledButton.tsx";
-import { theme } from "@app/providers/ThemeProvider/config/theme.ts";
+import { theme } from "../../app/providers/ThemeProvider/config/theme.ts";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { useAuthStore } from "@entities/user/store";
+import { useAuthStore } from "../../entities/user/store";
 
 export const CreatingUserPage = () => {
   const navigate = useNavigate();
@@ -142,7 +142,7 @@ export const CreatingUserPage = () => {
         <Select
           label="Роль"
           value={formData.role}
-          onChange={handleRoleChange}
+          onChange={() => handleRoleChange}
           variant="standard"
           fullWidth
         >

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { type Request } from '@app/types';
+import { type Request } from './types.ts';
 
 interface FilterParams {
   viewed: boolean;
@@ -42,10 +42,10 @@ export function useRequestsFilter(initialRequests: Request[]) {
       ) {
         return false;
       }
-      if (filters.viewed && !filters.notViewed && !request.isViewed) {
+      if (filters.viewed && !filters.notViewed && !request.is_viewed) {
         return false;
       }
-      if (filters.notViewed && !filters.viewed && request.isViewed) {
+      if (filters.notViewed && !filters.viewed && request.is_viewed) {
         return false;
       }
       if (
@@ -78,8 +78,8 @@ export function useRequestsFilter(initialRequests: Request[]) {
       } else if (sortValue === 'status') {
         return a.status.localeCompare(b.status);
       }
-      if (a.isViewed !== b.isViewed) {
-        return a.isViewed ? 1 : -1;
+      if (a.is_viewed !== b.is_viewed) {
+        return a.is_viewed ? 1 : -1;
       }
       return 0;
     });

@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { useAuthStore } from "../../entities/user/store";
-import { JSX } from "react";
+import { type JSX } from "react";
 
 interface RouteProps {
   children: JSX.Element;

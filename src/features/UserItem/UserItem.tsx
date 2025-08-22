@@ -12,10 +12,10 @@ import {
   Button,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import { theme } from "@app/providers/ThemeProvider/config/theme.ts";
+import { theme } from "../../app/providers/ThemeProvider/config/theme.ts";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { fetchWithAuth } from "@shared/api/fetchWithAuth";
+import { fetchWithAuth } from "../../shared/api/fetchWithAuth";
 
 interface User {
   id: string;

@@ -1,10 +1,10 @@
-import { AppBar, Toolbar, Box, Typography } from "@mui/material";
+import { AppBar, Toolbar, Box } from "@mui/material";
 import logo from "@shared/assets/logo.svg";
-import { useAuthStore } from "@entities/user/store.ts";
+import { useAuthStore } from "../../../entities/user/store.ts";
 import IconButton from "@mui/material/IconButton";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
-import { theme } from "@app/providers/ThemeProvider/config/theme.ts";
+import { theme } from "../../../app/providers/ThemeProvider/config/theme.ts";
 import { NavbarTypography } from "../../../shared/ui/links/NavbarTypography.tsx";
 
 export const Navbar = () => {

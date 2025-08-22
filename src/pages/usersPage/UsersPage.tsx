@@ -1,24 +1,17 @@
 import { Box, Alert } from "@mui/material";
 import { useState, useEffect } from "react";
-import { fetchWithAuth } from "@shared/api/fetchWithAuth";
+import { fetchWithAuth } from "../../shared/api/fetchWithAuth";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "@entities/user/store";
-import { UsersTable } from "@widgets/UsersTable/UsersTable.tsx";
-import { type User, type AccountsCollectionResponse } from "@app/types";
+import { useAuthStore } from "../../entities/user/store";
+import { UsersTable } from "../../widgets/UsersTable/UsersTable.tsx";
+import type { User, AccountsCollectionResponse } from "../../app/types";
 import { FilledButton } from "../../shared/ui/buttons/FilledButton.tsx";
-import { SearchBar } from "@features/TableToolbar/ui/SearchBar.tsx";
-
-interface User {
-  id: string;
-  email: string;
-  state: "STATE_ENABLED" | "STATE_DISABLED";
-}
+import { SearchBar } from "../../features/TableToolbar/ui/SearchBar.tsx";
 
 export const UsersPage = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>("");
   const navigate = useNavigate();
   const { role, isAuthenticated } = useAuthStore();
 
@@ -36,7 +29,6 @@ export const UsersPage = () => {
   };
 
   const handleSearchChange = (search: string) => {
-    setSearchQuery(search);
     const filtered = users.filter((user) =>
       user.email.toLowerCase().includes(search.toLowerCase())
     );
@@ -86,12 +78,12 @@ export const UsersPage = () => {
           console.error(
             "[UsersPage] API error:",
             response.detail,
-            response.data?.validation_errors
+            response.data?.validation_errors // Исправлено
           );
           return;
         }
 
-        if (!response.data?.accounts || response.data.accounts.length === 0) {
+        if (!response.data.accounts || response.data.accounts.length === 0) {
           setError("Нет доступных аккаунтов в базе данных");
           console.warn("[UsersPage] API returned empty accounts array");
           return;
@@ -106,11 +98,11 @@ export const UsersPage = () => {
             );
           }
           return {
-            id: account.id?.toString() || "",
+            id: account.id.toString(),
             email: account.email || "",
-            state:
-              (account.state as "STATE_ENABLED" | "STATE_DISABLED") ||
-              "STATE_DISABLED",
+            state: account.state || "STATE_DISABLED",
+            role: account.role, // Опционально
+            created_date: account.created_date, // Опционально
           };
         });
 

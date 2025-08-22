@@ -1,5 +1,5 @@
 import axios from "axios";
-import { type FetchResponse } from "@app/types";
+import { type FetchResponse } from "../../app/types";
 import { useAuthStore } from "../../entities/user/store";
 
 const BASE_URL = "/api/auth-service/v1";

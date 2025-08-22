@@ -1,18 +1,18 @@
 import { Box, Alert, Pagination, Typography } from "@mui/material";
-import React, { useState, useEffect } from "react";
-import { fetchWithCppdAuth } from "@shared/api/fetchWithCppdAuth";
+import { useState, useEffect } from "react";
+import { fetchWithCppdAuth } from "../../shared/api/fetchWithCppdAuth";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "@entities/user/store";
-import { TableToolbar } from "@features/TableToolbar/ui/TableToolbar.tsx";
-import { RequestsTable } from "@widgets/RequestsTable/ui/RequestsTable.tsx";
-import { RequestDialog } from "@widgets/RequestDialog/RequestDialog.tsx";
+import { useAuthStore } from "../../entities/user/store";
+import { TableToolbar } from "../../features/TableToolbar/ui/TableToolbar.tsx";
+import { RequestsTable } from "../../widgets/RequestsTable/ui/RequestsTable.tsx";
+import { RequestDialog } from "../../widgets/RequestDialog/RequestDialog.tsx";
 import {
   type Request,
   type FetchResponse,
   type RequestsCollectionResponse,
   type ClaimRecord,
-} from "@app/types";
-import { useRequestsFilter } from "@app/useRequestsFilter";
+} from "../../app/types";
+import { useRequestsFilter } from "../../app/useRequestsFilter";
 import { theme } from "../../app/providers/ThemeProvider/config/theme";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -25,7 +25,7 @@ export const RequestsPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 20;
   const navigate = useNavigate();
-  const { role, userId, accessToken } = useAuthStore();
+  const { role, userId } = useAuthStore();
 
   const {
     filteredAndSortedRequests,
@@ -116,7 +116,7 @@ export const RequestsPage = () => {
     };
 
     fetchRequests();
-  }, [navigate, page, userId, accessToken, role]);
+  }, [navigate, page, userId, role]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -183,7 +183,6 @@ export const RequestsPage = () => {
   };
 
   const handlePageChange = (
-    event: React.ChangeEvent<unknown>,
     newPage: number
   ) => {
     setPage(newPage);
@@ -218,7 +217,7 @@ export const RequestsPage = () => {
             <Pagination
               count={totalPages}
               page={page}
-              onChange={handlePageChange}
+              onChange={() => handlePageChange}
               showFirstButton
               showLastButton
               sx={{

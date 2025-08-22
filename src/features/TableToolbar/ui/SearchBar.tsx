@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Box, TextField, InputAdornment } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { theme } from '@app/providers/ThemeProvider/config/theme.ts';
+import { theme } from '../../../app/providers/ThemeProvider/config/theme.ts';
 
 interface SearchBarProps {
   onSearchChange: (search: string) => void;

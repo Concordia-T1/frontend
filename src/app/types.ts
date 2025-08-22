@@ -1,6 +1,6 @@
 export interface BaseResponse {
   ok: boolean;
-  detail?: string;
+  detail?: string | null;
   validation_errors?: Array<{ field: string; detail: string }> | null;
 }
 
@@ -8,12 +8,6 @@ export interface SuccessResponse extends BaseResponse {
   ok: true;
   detail?: string | null;
   validation_errors?: null;
-}
-
-export interface ErrorResponse extends BaseResponse {
-  ok: false;
-  detail: string;
-  validation_errors?: Array<{ field: string; detail: string }> | null;
 }
 
 export interface FetchResponse<T> {
@@ -27,7 +21,6 @@ export interface FetchResponse<T> {
 
 export interface User {
   id: string;
-  fullName: string;
   email: string;
   state: "STATE_ENABLED" | "STATE_DISABLED";
 }
@@ -83,9 +76,10 @@ export interface RequestsCollectionResponse {
   claims: ClaimRecord[];
 }
 
-export interface CreateRequestResponse {
+export interface CreateRequestResponse extends BaseResponse {
   ok: boolean;
-  detail?: string;
+  detail?: string | null;
+  validation_errors?: Array<{ field: string; detail: string }> | null;
   claims: ClaimRecord[];
 }
 
@@ -109,4 +103,33 @@ export interface TemplatesCollectionResponse extends SuccessResponse {
   total_elements: number;
   total_pages: number;
   templates: TemplateRecord[];
+}
+
+export interface Account {
+  id: number | string;
+  email: string;
+  role: string;
+  state: "STATE_ENABLED" | "STATE_DISABLED";
+  created_date: string;
+}
+
+export interface AccountsCollectionResponse {
+  ok: boolean;
+  detail: string | null;
+  validation_errors: Array<{ field: string; detail: string }> | null;
+  page_id: number;
+  page_size: number;
+  total_elements: number;
+  total_pages: number;
+  accounts: Account[];
+}
+
+export interface UserMeResponse extends SuccessResponse {
+  account: {
+    id: number | string;
+    email: string;
+    role: string;
+    state: "STATE_ENABLED" | "STATE_DISABLED";
+    created_date: string;
+  };
 }

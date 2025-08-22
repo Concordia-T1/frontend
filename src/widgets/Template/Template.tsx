@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Box, Button, Alert } from "@mui/material";
-import { CKEditor } from "@ckeditor/ckeditor5-react";
-import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
-import { fetchWithCppdAuth } from "@shared/api/fetchWithCppdAuth";
+import { Box, Alert } from "@mui/material";
+import { fetchWithCppdAuth } from "../../shared/api/fetchWithCppdAuth";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "@entities/user/store";
-import { type FetchResponse, type TemplateResponse } from "@app/types";
-import { theme } from "@app/providers/ThemeProvider/config/theme.ts";
+import { useAuthStore } from "../../entities/user/store";
+import { type FetchResponse, type TemplateResponse } from "../../app/types";
 import { FilledButton } from "../../shared/ui/buttons/FilledButton.tsx";
 
 interface TemplateProps {
@@ -232,14 +229,14 @@ export const Template: React.FC<TemplateProps> = ({ templateType }) => {
           {error}
         </Alert>
       )}
-      <CKEditor
-        editor={ClassicEditor}
-        data={content}
-        onChange={(_, editor) => {
-          setContent(editor.getData());
-          setIsEdited(true);
-        }}
-      />
+      {/*<CKEditor*/}
+      {/*  editor={ClassicEditor}*/}
+      {/*  data={content}*/}
+      {/*  onChange={(_, editor) => {*/}
+      {/*    setContent(editor.getData());*/}
+      {/*    setIsEdited(true);*/}
+      {/*  }}*/}
+      {/*/>*/}
       {isEdited && (
         <FilledButton
           variant="contained"

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom"; // Добавляем useLocation
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "./store";
 import { fetchWithAuth } from "../../shared/api/fetchWithAuth";
 

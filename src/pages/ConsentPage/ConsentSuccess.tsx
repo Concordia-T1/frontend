@@ -1,5 +1,5 @@
 import { Box, Typography } from "@mui/material";
-import { theme } from "@app/providers/ThemeProvider/config/theme.ts";
+import { theme } from "../../app/providers/ThemeProvider/config/theme.ts";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 
 export const ConsentSuccess = () => {
@@ -42,5 +42,3 @@ export const ConsentSuccess = () => {
     </Box>
   );
 };
-
-export default ConsentSuccess;

@@ -9,15 +9,11 @@ import {
   TableContainer,
 } from "@mui/material";
 import React, { useState } from "react";
-import { UserItem } from "@features/UserItem/UserItem.tsx";
-import { theme } from "@app/providers/ThemeProvider/config/theme.ts";
+import { UserItem } from "../../features/UserItem/UserItem.tsx";
+import { theme } from "../../app/providers/ThemeProvider/config/theme.ts";
+import type { User } from "../../app/types.ts"
 
-interface User {
-  id: string;
-  fullName: string;
-  email: string;
-  state: "STATE_ENABLED" | "STATE_DISABLED";
-}
+
 
 interface UsersTableProps {
   users: User[];

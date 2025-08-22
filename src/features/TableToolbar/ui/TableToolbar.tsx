@@ -34,7 +34,6 @@ export const TableToolbar = ({
       <SearchBar onSearchChange={onSearch} />
       <div style={{ flexGrow: 1 }} />
       <FilterSelect
-        onSortChange={onSortChange}
         onFilterChange={onFilterChange}
       />
       <SortSelect onSortChange={onSortChange} />

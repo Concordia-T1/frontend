@@ -7,7 +7,7 @@ import {
   Box,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { theme } from "@app/providers/ThemeProvider/config/theme.ts";
+import { theme } from "../../app/providers/ThemeProvider/config/theme.ts";
 import { useNavigate } from "react-router-dom";
 import React from "react";
 

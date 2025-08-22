@@ -8,7 +8,7 @@ import {
     Typography,
 } from '@mui/material';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
-import { theme } from '@app/providers/ThemeProvider/config/theme.ts';
+import { theme } from '../../../app/providers/ThemeProvider/config/theme.ts';
 import { FilledButton } from '../../../shared/ui/buttons/FilledButton.tsx';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -30,12 +30,10 @@ interface FilterValues {
 }
 
 interface FilterSelectProps {
-    onSortChange: (sort: string) => void;
     onFilterChange: (filters: FilterValues) => void;
 }
 
 export const FilterSelect = ({
-                                 onSortChange,
                                  onFilterChange,
                              }: FilterSelectProps) => {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -174,7 +172,7 @@ export const FilterSelect = ({
                           <Typography variant="subtitle2" gutterBottom>
                               Статус
                           </Typography>
-                          {['REJECTED', 'APPROVED', 'PENDING', 'TIMEOUT'].map((status) => (
+                          {['STATUS_REFUSED', 'STATUS_CONSENT', 'STATUS_WAITING', 'STATUS_QUEUED'].map((status) => (
                             <FormControlLabel
                               key={status}
                               control={
@@ -185,13 +183,13 @@ export const FilterSelect = ({
                                   />
                               }
                               label={
-                                  status === 'REJECTED'
+                                  status === 'STATUS_REFUSED'
                                     ? 'Отказ'
-                                    : status === 'APPROVED'
+                                    : status === 'STATUS_CONSENT'
                                       ? 'Согласие'
-                                      : status === 'PENDING'
+                                      : status === 'STATUS_WAITING'
                                         ? 'Ожидание'
-                                        : 'Таймаут'
+                                      : 'Ожидание'
                               }
                             />
                           ))}

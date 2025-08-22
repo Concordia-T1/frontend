@@ -1,6 +1,6 @@
 import axios from "axios";
-import type { FetchResponse } from "@app/types";
-import { useAuthStore } from "@entities/user/store";
+import type { FetchResponse } from "../../app/types";
+import { useAuthStore } from "../../entities/user/store";
 
 export const fetchWithCppdAuth = async <T>(
   url: string,

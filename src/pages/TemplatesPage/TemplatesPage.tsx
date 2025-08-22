@@ -1,9 +1,7 @@
-import { Box, Button, Typography } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "@entities/user/store";
-import { theme } from "@app/providers/ThemeProvider/config/theme.ts";
-import { Template } from "@widgets/Template/Template.tsx";
+import { theme } from "../../app/providers/ThemeProvider/config/theme.ts";
+import { Template } from "../../widgets/Template/Template.tsx";
 
 export const TemplatesPage = () => {
   const [activeTemplate, setActiveTemplate] = useState<"sopd" | "email">(

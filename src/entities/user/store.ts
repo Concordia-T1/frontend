@@ -26,7 +26,10 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setRole: (role) => set({ role }),
 
-  setUserData: (id, email) => set({ userId: id, email }),
+  setUserData: (id, email) => {
+    console.log("[useAuthStore] Сохранение userId и email:", { id, email });
+    set({ userId: id, email });
+  },
 
   setAuthChecked: (checked) => set({ isAuthChecked: checked }),
 
@@ -51,6 +54,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     //     isAuthChecked: true,
     //   });
     // }
+    if (navigate) {
+      navigate('/login');
+    }
   },
 
   refreshTrigger: 0,

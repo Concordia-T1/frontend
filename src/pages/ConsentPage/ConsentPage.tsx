@@ -1,7 +1,7 @@
 import { Box, Typography, Alert } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
-import { OutlinedButton } from "@shared/ui/buttons/OutlinedButton.tsx";
-import { theme } from "@app/providers/ThemeProvider/config/theme.ts";
+import { OutlinedButton } from "../../shared/ui/buttons/OutlinedButton.tsx";
+import { theme } from "../../app/providers/ThemeProvider/config/theme.ts";
 import { useState } from "react";
 import { fetchWithCppdAuth } from "../../shared/api/fetchWithCppdAuth";
 

@@ -1,14 +1,7 @@
 import { Box, Typography } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { OutlinedButton } from '@shared/ui/buttons/OutlinedButton.tsx';
-import { theme } from '@app/providers/ThemeProvider/config/theme.ts';
-
 
 
 export const ConsentErrorPage = () => {
-
-  const onSubmit = () => {
-  };
 
   return (
     <Box
@@ -42,8 +35,6 @@ export const ConsentErrorPage = () => {
       >
         Кандидат уже заполнил анкету/ссылка не валидна
       </Typography>
-
-
     </Box>
   );
 };

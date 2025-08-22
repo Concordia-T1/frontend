@@ -68,7 +68,7 @@ export const LoginPage = () => {
         } else {
           setServerError(
             responseData?.detail ===
-              "BAD_CREDENTIALS: Username and/or password is incorrect"
+            "BAD_CREDENTIALS: Username and/or password is incorrect"
               ? "Неправильный e-mail или пароль"
               : responseData?.detail || "Ошибка авторизации"
           );
@@ -103,6 +103,7 @@ export const LoginPage = () => {
       if (!id || !email || !role) {
         setAuthenticated(false);
         setServerError("Некорректные данные пользователя");
+        console.error("Некорректные данные в /accounts/me:", { id, email, role });
         return;
       }
 

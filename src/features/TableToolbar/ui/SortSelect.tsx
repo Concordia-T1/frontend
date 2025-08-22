@@ -9,7 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import SortIcon from '@mui/icons-material/Sort';
-import { theme } from '@app/providers/ThemeProvider/config/theme.ts';
+import { theme } from '../../../app/providers/ThemeProvider/config/theme.ts';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
 interface SortSelectProps {

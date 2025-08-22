@@ -8,15 +8,15 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { theme } from "../../app/providers/ThemeProvider/config/theme.ts";
 import { FilledButton } from "../../shared/ui/buttons/FilledButton.tsx";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { fetchWithCppdAuth } from "@shared/api/fetchWithCppdAuth";
-import { useAuthStore } from "@entities/user/store";
-import { type ClaimRecord } from "@app/types";
+import { fetchWithCppdAuth } from "../../shared/api/fetchWithCppdAuth";
+import { useAuthStore } from "../../entities/user/store";
+import { type ClaimRecord } from "../../app/types";
 
 export const RequestInfoPage = () => {
   const navigate = useNavigate();
@@ -81,7 +81,7 @@ export const RequestInfoPage = () => {
   const handleExport = () => {
     if (request) {
       console.log("Экспорт данных для заявки:", request);
-      // Реализуйте логику экспорта, например, создание JSON или CSV файла
+      // Логика экспорта
     }
   };
 
