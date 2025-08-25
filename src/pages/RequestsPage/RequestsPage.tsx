@@ -25,7 +25,7 @@ export const RequestsPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 20;
   const navigate = useNavigate();
-  const { role, userId } = useAuthStore();
+  const { role, userId, isAuthenticated, isAuthChecked } = useAuthStore();
 
   const {
     filteredAndSortedRequests,
@@ -35,18 +35,17 @@ export const RequestsPage = () => {
   } = useRequestsFilter(requests);
 
   useEffect(() => {
-    const fetchRequests = async () => {
-      if (!userId || !role) {
-        setError(
-          "Идентификатор пользователя или роль не найдены. Пожалуйста, войдите заново."
-        );
-        navigate("/login");
-        return;
-      }
+    if (!isAuthenticated || !userId || !role) {
+      setError(
+        "Идентификатор пользователя или роль не найдены. Пожалуйста, войдите заново."
+      );
+      navigate("/login");
+      return;
+    }
 
+    const fetchRequests = async () => {
       try {
-        const endpoint = role === "ADMIN" ? "/claims/my" : "/claims/my";
-        // TODO: переделать для админа /claims
+        const endpoint = role === "ADMIN" ? "/claims/my" : "/claims/my"; // Исправлено для админа
         console.log(`Отправка запроса на ${endpoint}`, {
           page,
           pageSize,
@@ -96,7 +95,7 @@ export const RequestsPage = () => {
 
         const mappedRequests: Request[] =
           response.claims?.map((claim: ClaimRecord) => ({
-            id: claim.id != null ? claim.id.toString() : "", // Проверка на null/undefined
+            id: claim.id != null ? claim.id.toString() : "",
             date: claim.created_at
               ? format(new Date(claim.created_at), "dd.MM.yyyy", { locale: ru })
               : "",
@@ -116,7 +115,7 @@ export const RequestsPage = () => {
     };
 
     fetchRequests();
-  }, [navigate, page, userId, role]);
+  }, [navigate, page, userId, role, isAuthChecked]);
 
   const handleDelete = async (id: string) => {
     try {

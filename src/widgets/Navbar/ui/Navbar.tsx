@@ -26,7 +26,6 @@ export const Navbar = () => {
 
         {isAuthenticated && (
           <Box sx={{ display: "flex", gap: 6, ml: 6 }}>
-            {role === "MANAGER" && (
               <>
                 <Link to="/requests" style={{ textDecoration: "none" }}>
                   <NavbarTypography
@@ -40,6 +39,22 @@ export const Navbar = () => {
                     Заявки
                   </NavbarTypography>
                 </Link>
+                {role === "ADMIN" && (
+                  <>
+                    <Link to="/users" style={{ textDecoration: "none" }}>
+                      <NavbarTypography
+                        sx={{
+                          color:
+                            location.pathname === "/users"
+                              ? theme.palette.brand.lightBlue
+                              : theme.palette.brand.primary,
+                        }}
+                      >
+                        Пользователи
+                      </NavbarTypography>
+                    </Link>
+                  </>
+                )}
                 <Link to="/templates" style={{ textDecoration: "none" }}>
                   <NavbarTypography
                     sx={{
@@ -53,47 +68,6 @@ export const Navbar = () => {
                   </NavbarTypography>
                 </Link>
               </>
-            )}
-            {role === "ADMIN" && (
-              <>
-                <Link to="/requests" style={{ textDecoration: "none" }}>
-                  <NavbarTypography
-                    sx={{
-                      color:
-                        location.pathname === "/requests"
-                          ? theme.palette.brand.lightBlue
-                          : theme.palette.brand.primary,
-                    }}
-                  >
-                    Заявки
-                  </NavbarTypography>
-                </Link>
-                <Link to="/users" style={{ textDecoration: "none" }}>
-                  <NavbarTypography
-                    sx={{
-                      color:
-                        location.pathname === "/users"
-                          ? theme.palette.brand.lightBlue
-                          : theme.palette.brand.primary,
-                    }}
-                  >
-                    Пользователи
-                  </NavbarTypography>
-                </Link>
-                <Link to="/templates" style={{ textDecoration: "none" }}>
-                  <NavbarTypography
-                    sx={{
-                      color:
-                        location.pathname === "/templates"
-                          ? theme.palette.brand.lightBlue
-                          : theme.palette.brand.primary,
-                    }}
-                  >
-                    Шаблоны
-                  </NavbarTypography>
-                </Link>
-              </>
-            )}
           </Box>
         )}
 

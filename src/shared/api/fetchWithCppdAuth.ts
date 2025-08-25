@@ -15,11 +15,13 @@ export const fetchWithCppdAuth = async <T>(
 ): Promise<FetchResponse<T>> => {
   const fullUrl = `/api/cppd-service/v1${url}`;
 
-  console.log(
-    `[fetchWithCppdAuth] Начало запроса: ${options.method || "GET"} ${fullUrl}`
-  );
-  console.log("[fetchWithCppdAuth] Заголовки:", options.headers || {});
-  console.log("[fetchWithCppdAuth] Параметры:", options.params || {});
+  if (process.env.NODE_ENV === "development") {
+    console.log(
+      `[fetchWithCppdAuth] Начало запроса: ${options.method || "GET"} ${fullUrl}`
+    );
+    console.log("[fetchWithCppdAuth] Заголовки:", options.headers || {});
+    console.log("[fetchWithCppdAuth] Параметры:", options.params || {});
+  }
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -36,10 +38,12 @@ export const fetchWithCppdAuth = async <T>(
       withCredentials: true,
     });
 
-    console.log(`[fetchWithCppdAuth] Успешный ответ от ${fullUrl}:`, {
-      status: response.status,
-      data: response.data,
-    });
+    if (process.env.NODE_ENV === "development") {
+      console.log(`[fetchWithCppdAuth] Успешный ответ от ${fullUrl}:`, {
+        status: response.status,
+        data: response.data,
+      });
+    }
 
     return {
       ok: response.status >= 200 && response.status < 300,
@@ -53,21 +57,24 @@ export const fetchWithCppdAuth = async <T>(
     const status = err.response?.status;
     let errorMessage: string;
 
-    console.error(`[fetchWithCppdAuth] Ошибка при запросе ${fullUrl}:`, {
-      status,
-      error: err.message,
-      responseData: err.response?.data,
-      code: err.code,
-    });
-    console.error(
-      `[fetchWithCppdAuth] Полный ответ сервера:`,
-      err.response?.data
-    );
+    if (process.env.NODE_ENV === "development") {
+      console.error(`[fetchWithCppdAuth] Ошибка при запросе ${fullUrl}:`, {
+        status,
+        error: err.message,
+        responseData: err.response?.data,
+        code: err.code,
+      });
+      console.error(
+        `[fetchWithCppdAuth] Полный ответ сервера:`,
+        err.response?.data
+      );
+    }
 
     switch (status) {
       case 401:
         errorMessage = "Сессия истекла. Пожалуйста, войдите заново.";
         if (navigate) {
+          // Вызываем logout только если navigate предоставлен
           useAuthStore.getState().logout(navigate);
         }
         break;

@@ -15,21 +15,32 @@ interface AccountResponse {
 
 export const useInitAuth = () => {
   const navigate = useNavigate();
-  const location = useLocation(); // Получаем текущий маршрут
-  const { setAuthChecked, setAuthenticated, setRole, setUserData } =
+  const location = useLocation();
+  const { setAuthChecked, setAuthenticated, setRole, setUserData, isAuthChecked } =
     useAuthStore();
 
-  // Список публичных маршрутов, где перенаправление на /login не требуется
-  const publicRoutes = [
-    "/login",
-    "/registration",
-    "/consent",
-    "/consent-success",
-    "/consent-error",
-  ];
+  const publicRoutes = ["/login", "/registration", "/consent", "/consent-success", "/consent-error"];
 
   useEffect(() => {
+    if (isAuthChecked) return;
+
     const checkAuth = async () => {
+      // Проверяем кэш в localStorage
+      const cachedAuth = localStorage.getItem("authData");
+      if (cachedAuth) {
+        const { id, email, role } = JSON.parse(cachedAuth);
+        if (id && email && role) {
+          setUserData(id, email);
+          setRole(role as "MANAGER" | "ADMIN");
+          setAuthenticated(true);
+          setAuthChecked(true);
+          if (publicRoutes.includes(location.pathname)) {
+            navigate("/requests", { replace: true });
+          }
+          return;
+        }
+      }
+
       try {
         const response = await fetchWithAuth<AccountResponse>("/accounts/me", {
           method: "GET",
@@ -38,6 +49,7 @@ export const useInitAuth = () => {
         if (response.ok && response.data?.account) {
           const { id, email, role } = response.data.account;
           if (id && email && role) {
+            localStorage.setItem("authData", JSON.stringify({ id, email, role }));
             setUserData(id, email);
             setRole(role.replace("ROLE_", "") as "MANAGER" | "ADMIN");
             setAuthenticated(true);
@@ -46,6 +58,7 @@ export const useInitAuth = () => {
               navigate("/requests", { replace: true });
             }
           } else {
+            localStorage.removeItem("authData");
             setAuthenticated(false);
             setRole(null);
             setUserData(null, null);
@@ -55,6 +68,7 @@ export const useInitAuth = () => {
             }
           }
         } else {
+          localStorage.removeItem("authData");
           setAuthenticated(false);
           setRole(null);
           setUserData(null, null);
@@ -64,6 +78,7 @@ export const useInitAuth = () => {
           }
         }
       } catch (err) {
+        localStorage.removeItem("authData");
         setAuthenticated(false);
         setRole(null);
         setUserData(null, null);
@@ -75,13 +90,5 @@ export const useInitAuth = () => {
     };
 
     checkAuth();
-  }, [
-    setAuthenticated,
-    setRole,
-    setUserData,
-    setAuthChecked,
-    navigate,
-    location.pathname,
-    useAuthStore((state) => state.refreshTrigger),
-  ]);
+  }, [setAuthenticated, setRole, setUserData, setAuthChecked, navigate, isAuthChecked]);
 };

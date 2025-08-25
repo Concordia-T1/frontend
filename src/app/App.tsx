@@ -11,12 +11,11 @@ import { RegistrationPage } from "../pages/ConsentPage/RegistrationPage";
 import { ConsentPage } from "../pages/ConsentPage/ConsentPage";
 import { ConsentSuccess } from "../pages/ConsentPage/ConsentSuccess";
 import { ConsentErrorPage } from "../pages/ConsentPage/ConsentErrorPage";
-import { ProtectedRoute, PublicRoute, AdminRoute } from "./providers/Router";
 import { RequestInfoPage } from "../pages/RequestInfoPage/RequestInfoPage.tsx";
 
 function App() {
   useInitAuth();
-  const { isAuthChecked, isAuthenticated } = useAuthStore();
+  const { isAuthChecked, isAuthenticated, role } = useAuthStore();
 
   if (!isAuthChecked) {
     return <div>Загрузка...</div>;
@@ -24,63 +23,37 @@ function App() {
 
   return (
     <>
-      <Navbar />
+      {isAuthenticated && <Navbar />}
       <Routes>
         <Route
           path="/login"
-          element={
-            <PublicRoute>
-              <LoginPage />
-            </PublicRoute>
-          }
+          element={isAuthenticated ? <Navigate to="/requests" replace /> : <LoginPage />}
         />
         <Route
           path="/requests"
-          element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <RequestsPage />
-            </ProtectedRoute>
-          }
+          element={isAuthenticated ? <RequestsPage /> : <Navigate to="/login" replace />}
         />
         <Route
           path="/request/:id"
-          element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <RequestInfoPage />
-            </ProtectedRoute>
-          }
+          element={isAuthenticated ? <RequestInfoPage /> : <Navigate to="/login" replace />}
         />
         <Route
           path="/users"
           element={
-            <AdminRoute isAuthenticated={isAuthenticated}>
-              <UsersPage />
-            </AdminRoute>
+            isAuthenticated && role === "ADMIN" ? <UsersPage /> : <Navigate to="/login" replace />
           }
         />
         <Route
           path="/create-user"
-          element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <CreatingUserPage />
-            </ProtectedRoute>
-          }
+          element={isAuthenticated ? <CreatingUserPage /> : <Navigate to="/login" replace />}
         />
         <Route
           path="/templates"
-          element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <TemplatesPage />
-            </ProtectedRoute>
-          }
+          element={isAuthenticated ? <TemplatesPage /> : <Navigate to="/login" replace />}
         />
         <Route
           path="/invite"
-          element={
-            <PublicRoute>
-              <RegistrationPage />
-            </PublicRoute>
-          }
+          element={isAuthenticated ? <Navigate to="/requests" replace /> : <RegistrationPage />}
         />
         <Route path="/consent" element={<ConsentPage />} />
         <Route path="/consent-success" element={<ConsentSuccess />} />

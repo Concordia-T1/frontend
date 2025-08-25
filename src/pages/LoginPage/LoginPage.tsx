@@ -107,7 +107,7 @@ export const LoginPage = () => {
         return;
       }
 
-      console.log("Сохранение данных пользователя:", { id, email, role });
+
       setRole(role.replace("ROLE_", "") as "MANAGER" | "ADMIN");
       setUserData(id, email);
       navigate("/requests");

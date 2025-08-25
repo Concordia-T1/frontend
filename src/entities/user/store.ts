@@ -24,7 +24,12 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
 
-  setRole: (role) => set({ role }),
+  setRole: (role) => {
+    console.log(role);
+    set({ role });
+
+  },
+
 
   setUserData: (id, email) => {
     console.log("[useAuthStore] Сохранение userId и email:", { id, email });
