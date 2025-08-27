@@ -17,7 +17,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://10.10.146.223:30204/",
+        target: "http://concordia.t1.innoca.local/",
         changeOrigin: true,
       },
     },
