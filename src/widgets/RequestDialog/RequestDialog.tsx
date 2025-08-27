@@ -28,6 +28,7 @@ import {
   type CreateRequestResponse,
 } from "../../app/types";
 import { Slide, useMediaQuery } from "@mui/material";
+import { fetchWithAuth } from '../../shared/api/fetchWithAuth.ts';
 
 interface TemplateRecord {
   id: string;
@@ -37,15 +38,17 @@ interface TemplateRecord {
 }
 
 interface ContactsResponse {
-  smtp_host?: string;
-  smtp_port?: number;
-  smtp_api_key?: string;
-  smtp_tls?: boolean;
-  smtp_ssl?: boolean;
-  smtp_ssl_host?: string | null;
-  notification_types?: string[];
-  contact_telegram?: string;
-  contact_whatsapp?: string;
+  contacts: {
+    smtp_host?: string;
+    smtp_port?: number;
+    smtp_api_key?: string;
+    smtp_tls?: boolean;
+    smtp_ssl?: boolean;
+    smtp_ssl_host?: string | null;
+    notification_types?: string[];
+    contact_telegram?: string;
+    contact_whatsapp?: string;
+  }
 }
 
 interface RequestDialogProps {
@@ -219,20 +222,20 @@ export const RequestDialog = ({
       return;
     }
 
-    // Проверка контактов через /account/{id}/contacts
     try {
-      const contactsResponse: FetchResponse<ContactsResponse> = await fetchWithCppdAuth(
-        `/account/${userId}/contacts`,
+      const contactsResponse: FetchResponse<ContactsResponse> = await fetchWithAuth(
+        `/accounts/${userId}/contacts`,
         { method: "GET" },
         navigate
       );
 
-      if (!contactsResponse.ok || !contactsResponse.data || Object.keys(contactsResponse.data).length === 0) {
+      if (!contactsResponse.ok || !contactsResponse.data.contacts) {
         setProfileWarning("Перед отправкой заявки необходимо заполнить информацию в профиле");
         return;
       }
 
-      const contacts = contactsResponse.data;
+      const contacts = contactsResponse.data.contacts;
+      console.log(contactsResponse);
       const requiredFields = [
         contacts.smtp_host,
         contacts.smtp_port,
