@@ -70,7 +70,7 @@ export const LoginPage = () => {
             responseData?.detail ===
             "BAD_CREDENTIALS: Username and/or password is incorrect"
               ? "Неправильный e-mail или пароль"
-              : responseData?.detail || "Ошибка авторизации"
+              : responseData?.detail || "Ошибка сервера"
           );
         }
         setAuthenticated(false);
@@ -107,8 +107,7 @@ export const LoginPage = () => {
         return;
       }
 
-
-      setRole(role.replace("ROLE_", "") as "MANAGER" | "ADMIN");
+      setRole(role as "ROLE_MANAGER" | "ROLE_ADMIN");
       setUserData(id, email);
       navigate("/requests");
     } catch (error: unknown) {
@@ -121,7 +120,7 @@ export const LoginPage = () => {
   return (
     <Box
       sx={{
-        minHeight: "40vh",
+        minHeight: "60vh",
         maxHeight: "80vh",
         display: "flex",
         justifyContent: "center",

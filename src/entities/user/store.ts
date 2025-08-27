@@ -1,13 +1,14 @@
 import { create } from "zustand";
+import { fetchWithAuth } from '../../shared/api/fetchWithAuth.ts';
 
 export interface AuthState {
   isAuthenticated: boolean;
-  role: "MANAGER" | "ADMIN" | null;
+  role: "ROLE_MANAGER" | "ROLE_ADMIN" | null;
   userId: number | null;
   email: string | null;
   isAuthChecked: boolean;
   setAuthenticated: (isAuthenticated: boolean) => void;
-  setRole: (role: "MANAGER" | "ADMIN" | null) => void;
+  setRole: (role: "ROLE_MANAGER" | "ROLE_ADMIN" | null) => void;
   setUserData: (id: number | null, email: string | null) => void;
   setAuthChecked: (checked: boolean) => void;
   logout: (navigate?: (path: string) => void) => Promise<void>;
@@ -25,9 +26,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
 
   setRole: (role) => {
-    console.log(role);
     set({ role });
-
   },
 
 
@@ -39,28 +38,25 @@ export const useAuthStore = create<AuthState>((set) => ({
   setAuthChecked: (checked) => set({ isAuthChecked: checked }),
 
   logout: async (navigate) => {
-    // try {
-    //   await fetchWithCppdAuth("/auth/logout", { method: "POST" });
-    //   set({
-    //     isAuthenticated: false,
-    //     role: null,
-    //     userId: null,
-    //     email: null,
-    //     isAuthChecked: true,
-    //   });
-    //   if (navigate) navigate("/login");
-    // } catch (err) {
-    //   console.error("Logout error:", err);
-    //   set({
-    //     isAuthenticated: false,
-    //     role: null,
-    //     userId: null,
-    //     email: null,
-    //     isAuthChecked: true,
-    //   });
-    // }
-    if (navigate) {
-      navigate('/login');
+    try {
+      await fetchWithAuth("/auth/logout", {
+        method: "GET",
+        withCredentials: true,
+      });
+    } catch (err) {
+      console.error("[useAuthStore] Ошибка при выходе из системы:", err);
+    } finally {
+      localStorage.removeItem("authData");
+      set({
+        isAuthenticated: false,
+        role: null,
+        userId: null,
+        email: null,
+        isAuthChecked: true,
+      });
+      if (navigate) {
+        navigate("/login");
+      }
     }
   },
 

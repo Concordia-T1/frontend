@@ -1,47 +1,20 @@
-import { useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Checkbox,
-  Paper,
-} from "@mui/material";
+import { useMediaQuery } from "@mui/material";
+import { Table, TableBody, TableCell, TableHead, TableRow, Box, Paper } from "@mui/material";
 import { RequestItem } from "../../../features/RequestItem/RequestItem.tsx";
+import { RequestCard } from "./RequestCard.tsx";
 import { theme } from "../../../app/providers/ThemeProvider/config/theme.ts";
-import { type Request } from "../../../app/types.ts";
+import { type Request, type RequestAdmin } from "../../../app/types.ts";
 
 interface RequestsTableProps {
-  requests: Request[];
-  onDelete: (id: string) => void;
+  requests: (Request | RequestAdmin)[];
+  isAdmin?: boolean;
 }
 
-export const RequestsTable = ({ requests, onDelete }: RequestsTableProps) => {
-  const [selected, setSelected] = useState<string[]>([]);
-
-  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.checked) {
-      setSelected(requests.map((request) => request.id));
-    } else {
-      setSelected([]);
-    }
-  };
-
-  const handleSelect = (id: string) => {
-    setSelected((prev) =>
-      prev.includes(id)
-        ? prev.filter((selectedId) => selectedId !== id)
-        : [...prev, id]
-    );
-  };
-
-  const isAllSelected =
-    requests.length > 0 && selected.length === requests.length;
+export const RequestsTable = ({ requests, isAdmin = false }: RequestsTableProps) => {
+  const isMobile = useMediaQuery('(max-width:940px)');
 
   return (
-    <TableContainer
+    <Box
       component={Paper}
       sx={{
         margin: { xs: "0 16px", sm: "0 24px" },
@@ -55,48 +28,48 @@ export const RequestsTable = ({ requests, onDelete }: RequestsTableProps) => {
         minWidth: "320px",
       }}
     >
-      <Table sx={{ tableLayout: "fixed" }}>
-        <TableHead>
-          <TableRow>
-            <TableCell
-              padding="checkbox"
-              sx={{
-                width: { xs: "10%", sm: "60px" },
-                paddingLeft: { xs: "12px", sm: "20px" },
-              }}
-            >
-              <Checkbox
-                checked={isAllSelected}
-                onChange={handleSelectAll}
-                indeterminate={selected.length > 0 && !isAllSelected}
-                color="primary"
-              />
-            </TableCell>
-            <TableCell sx={{ width: { xs: "20%", sm: "100px" } }}>
-              Дата отправки
-            </TableCell>
-            <TableCell sx={{ width: { xs: "40%", sm: "150px" } }}>
-              E-mail
-            </TableCell>
-            <TableCell sx={{ width: { xs: "30%", sm: "200px" } }}>
-              Статус
-            </TableCell>
-            <TableCell sx={{ width: { xs: "10%", sm: "20px" } }} />
-            <TableCell sx={{ width: { xs: "10%", sm: "30px" } }} />
-          </TableRow>
-        </TableHead>
-        <TableBody>
+      {isMobile ? (
+        <Box sx={{ display: "flex", flexDirection: "column" }}>
           {requests.map((request) => (
-            <RequestItem
+            <RequestCard
               key={request.id}
               request={request}
-              isSelected={selected.includes(request.id)}
-              onSelect={handleSelect}
-              onDelete={onDelete}
+              isAdmin={isAdmin}
             />
           ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+        </Box>
+      ) : (
+        <Table sx={{ tableLayout: "fixed" }}>
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ width: { sm: "120px" } }}>
+                Дата отправки
+              </TableCell>
+              <TableCell sx={{ width: { sm: "180px" } }}>
+                E-mail
+              </TableCell>
+              {isAdmin && (
+                <TableCell sx={{ width: { sm: "180px" } }}>
+                  Отправитель
+                </TableCell>
+              )}
+              <TableCell sx={{ width: { sm: "200px" } }}>
+                Статус
+              </TableCell>
+              <TableCell sx={{ width: { sm: "20px" } }} />
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {requests.map((request) => (
+              <RequestItem
+                key={request.id}
+                request={request}
+                isAdmin={isAdmin}
+              />
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </Box>
   );
 };

@@ -7,6 +7,7 @@ import {
   Radio,
   RadioGroup,
   Typography,
+  useMediaQuery,
 } from '@mui/material';
 import SortIcon from '@mui/icons-material/Sort';
 import { theme } from '../../../app/providers/ThemeProvider/config/theme.ts';
@@ -19,6 +20,7 @@ interface SortSelectProps {
 export const SortSelect = ({ onSortChange }: SortSelectProps) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [sortValue, setSortValue] = useState<string>('');
+  const isMobile = useMediaQuery('(max-width:940px)');
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -42,17 +44,25 @@ export const SortSelect = ({ onSortChange }: SortSelectProps) => {
       <Button
         variant="contained"
         startIcon={<SortIcon />}
-        endIcon={<KeyboardArrowDownIcon />}
+        endIcon={!isMobile ? <KeyboardArrowDownIcon /> : null}
         onClick={handleClick}
         sx={{
-          borderRadius: '30px',
+          borderRadius: isMobile ? '50%' : '30px',
           border: 'none',
           backgroundColor: '#ECF2F9',
           color: theme.palette.text.primary,
           textTransform: 'none',
-          minWidth: 150,
-          padding: '6px 16px',
+          minWidth: isMobile ? 'auto' : 150,
+          height: 'auto',
+          padding: isMobile ? '6px' : '6px 16px',
+          transition: '0.5s',
           boxShadow: 'none',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          '& .MuiButton-startIcon': {
+            margin: isMobile ? 0 : '0 8px 0 -4px',
+          },
           '&:hover': {
             backgroundColor: '#DCE6F1',
             border: 'none',
@@ -60,7 +70,7 @@ export const SortSelect = ({ onSortChange }: SortSelectProps) => {
           },
         }}
       >
-        Сортировка
+        {!isMobile && 'Сортировка'}
       </Button>
       <Popover
         id={id}

@@ -6,6 +6,7 @@ import {
   TextField,
   Chip,
   CircularProgress,
+  Alert,
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -13,10 +14,21 @@ import { theme } from "../../app/providers/ThemeProvider/config/theme.ts";
 import { FilledButton } from "../../shared/ui/buttons/FilledButton.tsx";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { fetchWithCppdAuth } from "../../shared/api/fetchWithCppdAuth";
 import { useAuthStore } from "../../entities/user/store";
 import { type ClaimRecord } from "../../app/types";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
+
+const formatDate = (dateString: string | null | undefined) =>
+  dateString ? format(new Date(dateString), "dd.MM.yyyy HH:mm", { locale: ru }) : "—";
+
+const formatPhone = (phone: string | null | undefined) => phone || "Не указано";
+
+const validatePhone = (phone: string | null | undefined) => {
+  if (!phone) return false;
+  return /^[7][0-9]{10}$/.test(phone);
+};
 
 export const RequestInfoPage = () => {
   const navigate = useNavigate();
@@ -25,6 +37,7 @@ export const RequestInfoPage = () => {
   const [request, setRequest] = useState<ClaimRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchRequest = async () => {
@@ -36,36 +49,33 @@ export const RequestInfoPage = () => {
 
       try {
         console.log(`[RequestInfoPage] Запрос данных заявки: /claims/${id}`);
-        const response = await fetchWithCppdAuth<ClaimRecord>(
+        const response = await fetchWithCppdAuth(
           `/claims/${id}`,
-          {
-            method: "GET",
-            headers: {
-              "X-User-ID": userId?.toString() || "",
-              "X-User-Role": role ? `ROLE_${role}` : "ROLE_ADMIN",
-            },
-          },
+          { method: "GET" },
           navigate
         );
 
-        console.log(`[RequestInfoPage] Ответ от /claims/${id}:`, response);
+        // Универсальное извлечение заявки из ответа
+        const claim =
+          (response as any).claim ??
+          (response as any).data?.claim ??
+          (response as any).data ??
+          null;
 
-        if (!response.ok) {
-          switch (response.status) {
-            case 401:
-              setError("Сессия истекла. Пожалуйста, войдите заново.");
-              break;
-            case 404:
-              setError("Заявка не найдена.");
-              break;
-            default:
-              setError(response.detail || "Ошибка при загрузке данных заявки");
-          }
+        if (!claim || !claim.id) {
+          setError("Заявка не найдена или сервер вернул пустые данные");
+          setRequest(null);
           setLoading(false);
           return;
         }
 
-        setRequest(response.data);
+        setRequest(claim);
+
+        if (claim.candidate_phone && !validatePhone(claim.candidate_phone)) {
+          setPhoneError(
+            "Номер телефона кандидата имеет некорректный формат (ожидалось 11 цифр, начиная с 7)"
+          );
+        }
         setLoading(false);
       } catch (err: unknown) {
         const errorMsg =
@@ -80,39 +90,34 @@ export const RequestInfoPage = () => {
 
   const handleExport = () => {
     if (request) {
-      console.log("Экспорт данных для заявки:", request);
-      // Логика экспорта
+      const exportData = {
+        id: request.id,
+        owner_email: request.owner_email,
+        candidate_email: request.candidate_email,
+        candidate_phone: request.candidate_phone,
+        candidate_last_name: request.candidate_last_name || "-",
+        candidate_first_name: request.candidate_first_name || "-",
+        candidate_middle_name: request.candidate_middle_name || "-",
+        candidate_birthdate: request.candidate_birthdate || "-",
+        status: request.status,
+        created_at: request.created_at,
+        responded_at: request.responded_at || "-",
+        expires_at: request.expires_at,
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `claim_${request.id}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      console.log("[RequestInfoPage] Экспорт данных для заявки:", exportData);
     }
   };
 
-  const handleDelete = async () => {
-    if (request) {
-      try {
-        console.log("Удаление заявки:", request.id);
-        const response = await fetchWithCppdAuth(
-          `/claims/${request.id}`,
-          {
-            method: "DELETE",
-            headers: {
-              "X-User-ID": userId?.toString() || "",
-              "X-User-Role": role ? `ROLE_${role}` : "ROLE_ADMIN",
-            },
-          },
-          navigate
-        );
-
-        if (response.ok) {
-          navigate("/requests");
-        } else {
-          setError("Ошибка при удалении заявки");
-        }
-      } catch (err: unknown) {
-        const errorMsg =
-          err instanceof Error ? err.message : "Ошибка при удалении заявки";
-        setError(errorMsg);
-      }
-    }
-  };
 
   if (loading) {
     return (
@@ -166,7 +171,7 @@ export const RequestInfoPage = () => {
         margin: { xs: "0 16px", sm: "0 24px" },
       }}
     >
-      <Box sx={{ display: "flex", gap: 1, mb: 3, mt: 2 }}>
+      <Box sx={{ display: "flex", mb: 1 }}>
         <Button
           sx={{
             color: theme.palette.brand.secondary,
@@ -176,25 +181,9 @@ export const RequestInfoPage = () => {
               bgcolor: theme.palette.brand.white,
             },
           }}
-          onClick={() => {
-            console.log("Переход на страницу запросов");
-            navigate("/requests");
-          }}
+          onClick={() => navigate("/requests")}
         >
-          <ArrowBackIcon />
-        </Button>
-        <Button
-          sx={{
-            color: theme.palette.brand.secondary,
-            transition: "0.5s",
-            "&:hover": {
-              color: theme.palette.brand.primary,
-              bgcolor: theme.palette.brand.white,
-            },
-          }}
-          onClick={handleDelete}
-        >
-          <DeleteIcon />
+          <ArrowBackIcon/>
         </Button>
       </Box>
       <Paper
@@ -204,79 +193,86 @@ export const RequestInfoPage = () => {
           borderColor: "grey.300",
           borderRadius: 1,
           boxShadow: "none",
-          position: "relative",
         }}
       >
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 5 }}>
-          <Box>
-            <Typography
-              variant="h6"
-              fontWeight={500}
-              sx={{ marginBottom: "10px" }}
-            >
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Typography variant="h6" fontWeight={500}>
               {request.candidate_email}
             </Typography>
+
             <Chip
               label={
                 request.status === "STATUS_CONSENT"
                   ? "Согласие"
                   : request.status === "STATUS_REFUSED"
-                  ? "Отказ"
-                  : request.status === "STATUS_WAITING"
-                  ? "Ожидание"
-                  : request.status === "STATUS_QUEUED"
-                  ? "Ожидание"
-                  : "Ожидание"
+                    ? "Отказ"
+                    : request.status === "STATUS_WAITING"
+                      ? "Ожидание"
+                      : request.status === "STATUS_QUEUED"
+                        ? "Ожидание"
+                        : "Ошибка"
               }
               sx={{
                 backgroundColor:
                   request.status === "STATUS_CONSENT"
                     ? theme.palette.brand.pastelGreen
                     : request.status === "STATUS_REFUSED"
-                    ? theme.palette.brand.pastelRed
-                    : request.status === "STATUS_WAITING"
-                    ? theme.palette.brand.pastelOrange
-                    : request.status === "STATUS_QUEUED"
-                    ? theme.palette.brand.pastelOrange
-                    : theme.palette.brand.pastelOrange,
+                      ? theme.palette.brand.pastelRed
+                      : request.status === "STATUS_WAITING"
+                        ? theme.palette.brand.pastelOrange
+                        : request.status === "STATUS_QUEUED"
+                          ? theme.palette.brand.pastelOrange
+                          : theme.palette.brand.pastelRed,
+                width: "fit-content",
               }}
             />
+
           </Box>
+
           <Box sx={{ textAlign: "right" }}>
-            <Typography variant="body2" color="text.secondary">
-              Отправлено:{" "}
-              {new Date(request.created_at).toLocaleDateString("ru-RU")}
+            <Typography variant="body2" sx={{ mb: 2}}>
+              Отправитель: {request.owner_email}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ fontFamily: '"ALS HAUSS", sans-serif', fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>
+              Отправлено: {formatDate(request.created_at)}
             </Typography>
             {isCandidateDataVisible && (
-              <>
-                <Typography variant="body2" color="text.secondary">
-                  Обновлено:{" "}
-                  {request.updated_at
-                    ? new Date(request.updated_at).toLocaleDateString("ru-RU")
-                    : "—"}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Истекает:{" "}
-                  {new Date(request.expires_at).toLocaleDateString("ru-RU")}
-                </Typography>
-              </>
+              <Typography variant="body2" color="text.secondary" sx={{ fontFamily: '"ALS HAUSS", sans-serif', fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>
+                Ответ получен: {formatDate(request.responded_at)}
+              </Typography>
             )}
+
           </Box>
+
         </Box>
+
+        {phoneError && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {phoneError}
+          </Alert>
+        )}
 
         {isCandidateDataVisible && (
           <>
             <Typography variant="h6" fontWeight={400} sx={{ mt: 3, mb: 2 }}>
               Данные кандидата:
             </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+                mb: 5,
+              }}
+            >
               <TextField
                 label="ФИО"
                 value={
                   request.candidate_last_name
                     ? `${request.candidate_last_name} ${
-                        request.candidate_first_name || ""
-                      } ${request.candidate_middle_name || ""}`
+                      request.candidate_first_name || ""
+                    } ${request.candidate_middle_name || ""}`.trim()
                     : "Не указано"
                 }
                 variant="standard"
@@ -284,30 +280,35 @@ export const RequestInfoPage = () => {
                 sx={{ maxWidth: "500px" }}
               />
               <TextField
-                label="Номер телефона"
-                value={request.candidate_phone || "Не указано"}
+                label="Дата рождения"
+                value={request.candidate_birthdate || "Не указано"}
                 variant="standard"
                 InputProps={{ readOnly: true }}
                 sx={{ maxWidth: "500px" }}
               />
               <TextField
+                label="Номер телефона"
+                value={formatPhone(request.candidate_phone)}
+                variant="standard"
+                InputProps={{ readOnly: true }}
+                error={!!phoneError}
+                sx={{ maxWidth: "500px" }}
+              />
+              <TextField
                 label="E-mail"
-                value={request.candidate_email}
+                value={request.candidate_email || "Не указано"}
                 variant="standard"
                 InputProps={{ readOnly: true }}
                 sx={{ maxWidth: "500px" }}
               />
             </Box>
+            <Box sx={{ display: "flex" }}>
+              <FilledButton onClick={handleExport} sx={{ gap: 1 }}>
+                <FileDownloadIcon />
+                Экспорт данных
+              </FilledButton>
+            </Box>
           </>
-        )}
-
-        {isCandidateDataVisible && (
-          <Box sx={{ mt: 5, display: "flex" }}>
-            <FilledButton onClick={handleExport} sx={{ gap: 1 }}>
-              <FileDownloadIcon />
-              Экспорт данных
-            </FilledButton>
-          </Box>
         )}
       </Paper>
     </Box>

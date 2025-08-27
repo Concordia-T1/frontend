@@ -40,26 +40,29 @@ export interface Request {
     | "STATUS_WAITING"
     | "STATUS_CONSENT"
     | "STATUS_REFUSED"
-    | "STATUS_TIMEOUT";
   is_viewed: boolean;
 }
 
+export interface RequestAdmin extends Request {
+  sender: string;
+}
+
 export interface ClaimRecord {
-  id: number;
-  owner_id: number;
+  id: string;
+  owner_id: string;
   owner_email: string;
   candidate_email: string;
   candidate_last_name: string | null;
   candidate_first_name: string | null;
   candidate_middle_name: string | null;
   candidate_phone: string | null;
-  template_id: number;
+  candidate_birthdate: string | null;
+  template_id: string;
   status:
     | "STATUS_QUEUED"
     | "STATUS_WAITING"
     | "STATUS_CONSENT"
     | "STATUS_REFUSED"
-    | "STATUS_TIMEOUT";
   responded_at: string | null;
   expires_at: string;
   created_at: string;
@@ -84,8 +87,8 @@ export interface CreateRequestResponse extends BaseResponse {
 }
 
 export interface TemplateRecord {
-  id: number;
-  owner_id: number;
+  id: string;
+  owner_id: string;
   name: string;
   subject: string;
   content: string;
@@ -106,7 +109,7 @@ export interface TemplatesCollectionResponse extends SuccessResponse {
 }
 
 export interface Account {
-  id: number | string;
+  id: string;
   email: string;
   role: string;
   state: "STATE_ENABLED" | "STATE_DISABLED";
@@ -126,10 +129,24 @@ export interface AccountsCollectionResponse {
 
 export interface UserMeResponse extends SuccessResponse {
   account: {
-    id: number | string;
+    id: string;
     email: string;
     role: string;
     state: "STATE_ENABLED" | "STATE_DISABLED";
     created_date: string;
   };
+}
+
+export interface ContactsRecord {
+  user_id: string;
+  email: string;
+  smtp_host: string | null;
+  smtp_port: number | null;
+  smtp_api_key: string | null;
+  smtp_tls: boolean;
+  smtp_ssl: boolean;
+  smtp_ssl_host: string | null;
+  notification_types: string[];
+  contact_telegram: string | null;
+  contact_whatsapp: string | null;
 }

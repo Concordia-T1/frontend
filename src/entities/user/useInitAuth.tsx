@@ -22,16 +22,21 @@ export const useInitAuth = () => {
   const publicRoutes = ["/login", "/registration", "/consent", "/consent-success", "/consent-error"];
 
   useEffect(() => {
+    if (location.pathname === "/invite") {
+      console.log("[useInitAuth] Пропуск проверки аутентификации для /invite");
+      setAuthChecked(true);
+      return;
+    }
+
     if (isAuthChecked) return;
 
     const checkAuth = async () => {
-      // Проверяем кэш в localStorage
       const cachedAuth = localStorage.getItem("authData");
       if (cachedAuth) {
         const { id, email, role } = JSON.parse(cachedAuth);
         if (id && email && role) {
           setUserData(id, email);
-          setRole(role as "MANAGER" | "ADMIN");
+          setRole(role as "ROLE_MANAGER" | "ROLE_ADMIN");
           setAuthenticated(true);
           setAuthChecked(true);
           if (publicRoutes.includes(location.pathname)) {
@@ -51,7 +56,7 @@ export const useInitAuth = () => {
           if (id && email && role) {
             localStorage.setItem("authData", JSON.stringify({ id, email, role }));
             setUserData(id, email);
-            setRole(role.replace("ROLE_", "") as "MANAGER" | "ADMIN");
+            setRole(role as "ROLE_MANAGER" | "ROLE_ADMIN");
             setAuthenticated(true);
             setAuthChecked(true);
             if (publicRoutes.includes(location.pathname)) {

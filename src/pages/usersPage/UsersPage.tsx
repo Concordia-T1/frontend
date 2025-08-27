@@ -44,11 +44,11 @@ export const UsersPage = () => {
         return;
       }
 
-      if (role !== "ADMIN") {
+      if (role !== "ROLE_ADMIN") {
         setError(
           "Доступ к списку пользователей разрешен только администраторам"
         );
-        console.error("[UsersPage] User role is not ADMIN:", role);
+        console.error("[UsersPage] User role is not ROLE_ADMIN:", role);
         navigate("/login");
         return;
       }
@@ -136,7 +136,7 @@ export const UsersPage = () => {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          mb: 2,
+          mb: {xs: 1, sm: 1, md: 2},
         }}
       >
         <SearchBar onSearchChange={handleSearchChange} />

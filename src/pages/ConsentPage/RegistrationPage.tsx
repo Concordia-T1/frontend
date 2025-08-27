@@ -1,11 +1,12 @@
-import { Box, Paper, Typography, TextField, Alert } from "@mui/material";
+import { Box, Paper, Typography, TextField, Alert, useMediaQuery } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { useHookFormMask } from "use-mask-input";
 import { isValid, parse, isBefore, subYears } from "date-fns";
 import { OutlinedButton } from "../../shared/ui/buttons/OutlinedButton.tsx";
 import { useState, useEffect } from "react";
-import { fetchWithAuth } from "../../shared/api/fetchWithAuth";
+import axios from "axios";
+import { theme } from "../../app/providers/ThemeProvider/config/theme";
 
 interface FormValues {
   lastName: string;
@@ -21,6 +22,9 @@ export const RegistrationPage = () => {
   const location = useLocation();
   const [serverError, setServerError] = useState<string | null>(null);
   const [isLinkValid, setIsLinkValid] = useState<boolean | null>(null);
+  const [claimId, setClaimId] = useState<number | null>(null);
+  const [candidatePhone, setCandidatePhone] = useState<string | null>(null);
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const {
     control,
@@ -40,7 +44,6 @@ export const RegistrationPage = () => {
 
   const registerWithMask = useHookFormMask(control.register);
 
-  // Проверка валидности ссылки
   useEffect(() => {
     const verifyInviteLink = async () => {
       const params = new URLSearchParams(location.search);
@@ -49,25 +52,45 @@ export const RegistrationPage = () => {
       const sig = params.get("sig");
 
       if (!epk || !ctx || !sig) {
-        setServerError("Недействительная ссылка");
+        setServerError("Недействительная ссылка: отсутствуют параметры epk, ctx или sig");
         setIsLinkValid(false);
         navigate("/consent-error");
         return;
       }
 
-      const response = await fetchWithAuth("/auth/invite/verify", {
-        method: "POST",
-        data: { epk, ctx, sig },
-      });
+      try {
+        console.log("[RegistrationPage] Отправка запроса на /claims/validate", { epk, ctx, sig });
+        const response = await axios.post(
+          "/api/cppd-service/v1/claims/validate",
+          { epk, ctx, sig },
+          {
+            withCredentials: true,
+          }
+        );
 
-      if (!response.ok) {
-        setServerError(response.detail || "Недействительная ссылка");
+        console.log("[RegistrationPage] Ответ от /claims/validate:", response.data);
+
+        if (response.status >= 200 && response.status < 300 && response.data.ok) {
+          setIsLinkValid(true);
+          setClaimId(response.data.claim_id);
+          setCandidatePhone(response.data.candidate_phone || null);
+        } else {
+          setServerError(response.data?.detail || "Недействительная ссылка");
+          setIsLinkValid(false);
+          navigate("/consent-error");
+        }
+      } catch (error: any) {
+        console.error("[RegistrationPage] Ошибка при проверке ссылки:", error);
+        if (error.code === "ERR_NETWORK") {
+          setServerError("Ошибка сети: сервер недоступен. Проверьте, запущен ли сервер.");
+        } else if (error.response?.status === 401 || error.response?.status === 403) {
+          setServerError("Недействительная или истекшая ссылка");
+        } else {
+          setServerError(error.response?.data?.detail || "Ошибка проверки ссылки");
+        }
         setIsLinkValid(false);
         navigate("/consent-error");
-        return;
       }
-
-      setIsLinkValid(true);
     };
 
     verifyInviteLink();
@@ -76,7 +99,7 @@ export const RegistrationPage = () => {
   const validateDate = (value: string) => {
     const parsedDate = parse(value, "dd.MM.yyyy", new Date());
     const minDate = new Date(1900, 0, 1); // 01.01.1900
-    const maxDate = new Date(2025, 7, 15); // 15.08.2025
+    const maxDate = new Date(2025, 7, 27); // 27.08.2025 (сегодняшняя дата)
     const minAgeDate = subYears(maxDate, 14); // 14 лет назад
 
     if (!isValid(parsedDate)) {
@@ -94,42 +117,59 @@ export const RegistrationPage = () => {
     return true;
   };
 
+  const validatePhone = (value: string) => {
+    const cleanedPhone = value.replace(/\D/g, "");
+    if (cleanedPhone.length !== 11 || !/^[7|8][0-9]{10}$/.test(cleanedPhone)) {
+      return "Номер телефона должен состоять ровно из 11 цифр, начиная с 7 или 8";
+    }
+    if (candidatePhone && cleanedPhone !== candidatePhone && cleanedPhone !== ("8" + candidatePhone.slice(1))) {
+      return "Введенный номер телефона не соответствует данным заявки";
+    }
+    return true;
+  };
+
   const onSubmit = async (data: FormValues) => {
     setServerError(null);
-    const e164Phone = data.phone.replace(/\D/g, "");
-    const params = new URLSearchParams(location.search);
-    const formattedData = {
-      lastName: data.lastName,
-      firstName: data.firstName,
-      middleName: data.middleName || undefined,
-      birthDate: data.birthDate,
-      phone: `+${e164Phone}`,
-      email: data.email,
-      epk: params.get("epk"),
-      ctx: params.get("ctx"),
-      sig: params.get("sig"),
-    };
-
-    const response = await fetchWithAuth("/auth/register", {
-      method: "POST",
-      data: formattedData,
-    });
-
-    if (!response.ok) {
-      setServerError(response.detail || "Ошибка регистрации");
+    if (claimId === null) {
+      setServerError("Ошибка: claim_id не получен");
       navigate("/consent-error");
       return;
     }
 
-    navigate("/consent", { state: { inviteParams: formattedData } });
+    const cleanedPhone = data.phone.replace(/\D/g, "");
+    const e164Phone = cleanedPhone.startsWith("8") ? "7" + cleanedPhone.slice(1) : cleanedPhone;
+    const params = new URLSearchParams(location.search);
+    const formattedData = {
+      lastName: data.lastName,
+      firstName: data.firstName,
+      middleName: data.middleName || null,
+      birthdate: data.birthDate,
+      phone: e164Phone,
+      email: data.email,
+      epk: params.get("epk"),
+      ctx: params.get("ctx"),
+      sig: params.get("sig"),
+      claim_id: claimId,
+    };
+
+    console.log("[RegistrationPage] Переход на /consent с данными:", formattedData);
+    navigate("/consent", {
+      state: {
+        inviteParams: formattedData,
+      },
+    });
   };
 
   if (isLinkValid === null) {
-    return <Typography>Проверка ссылки...</Typography>;
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
+        <Typography variant={isMobile ? "body1" : "h6"}>Проверка ссылки...</Typography>
+      </Box>
+    );
   }
 
   if (isLinkValid === false) {
-    return null; // navigate уже перенаправит на /consent-error
+    return null;
   }
 
   return (
@@ -138,33 +178,41 @@ export const RegistrationPage = () => {
         p: { xs: 1, sm: 2 },
         maxWidth: "100%",
         boxSizing: "border-box",
-        margin: { xs: "0 16px", sm: "0 24px" },
+        margin: { xs: "0 8px", sm: "0 24px" },
+        display: "flex",
+        justifyContent: "center",
       }}
     >
       <Paper
         sx={{
-          boxShadow: "none",
-          position: "relative",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          p: { xs: 2, sm: 3 },
+          borderRadius: 2,
+          p: { xs: 1, sm: 3 },
+          width: { xs: "100%", sm: "600px" },
+          boxSizing: "border-box",
+          boxShadow: 'none'
         }}
       >
         <Typography
-          variant="h6"
+          variant={isMobile ? "h6" : "h5"}
           fontWeight={500}
-          sx={{ mt: 3, mb: 5, textTransform: "uppercase" }}
+          sx={{
+            mt: { xs: 2, sm: 3 },
+            mb: { xs: 3, sm: 5 },
+            textTransform: "uppercase",
+            textAlign: "center",
+          }}
         >
           Согласие на обработку персональных данных
         </Typography>
 
         <Box
+          component="form"
+          onSubmit={handleSubmit(onSubmit)}
           sx={{
             display: "flex",
             flexDirection: "column",
-            gap: 2,
-            width: "600px",
+            gap: { xs: 1.5, sm: 2 },
+            width: "100%",
           }}
         >
           <Controller
@@ -183,9 +231,12 @@ export const RegistrationPage = () => {
                 {...field}
                 label="Фамилия"
                 variant="standard"
+                size={isMobile ? "small" : "medium"}
                 required
                 error={!!errors.lastName}
                 helperText={errors.lastName?.message}
+                fullWidth
+                sx={{ mb: isMobile ? 1 : 2 }}
               />
             )}
           />
@@ -206,9 +257,12 @@ export const RegistrationPage = () => {
                 {...field}
                 label="Имя"
                 variant="standard"
+                size={isMobile ? "small" : "medium"}
                 required
                 error={!!errors.firstName}
                 helperText={errors.firstName?.message}
+                fullWidth
+                sx={{ mb: isMobile ? 1 : 2 }}
               />
             )}
           />
@@ -228,8 +282,11 @@ export const RegistrationPage = () => {
                 {...field}
                 label="Отчество"
                 variant="standard"
+                size={isMobile ? "small" : "medium"}
                 error={!!errors.middleName}
                 helperText={errors.middleName?.message}
+                fullWidth
+                sx={{ mb: isMobile ? 1 : 2 }}
               />
             )}
           />
@@ -249,10 +306,12 @@ export const RegistrationPage = () => {
                 })}
                 label="Дата рождения"
                 variant="standard"
+                size={isMobile ? "small" : "medium"}
                 required
                 error={!!errors.birthDate}
                 helperText={errors.birthDate?.message}
                 fullWidth
+                sx={{ mb: isMobile ? 1 : 2 }}
               />
             )}
           />
@@ -262,10 +321,7 @@ export const RegistrationPage = () => {
             control={control}
             rules={{
               required: "Введите номер телефона",
-              pattern: {
-                value: /^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/,
-                message: "Неверный формат номера телефона (+7 (999) 123-45-67)",
-              },
+              validate: validatePhone,
             }}
             render={({ field }) => (
               <TextField
@@ -275,10 +331,12 @@ export const RegistrationPage = () => {
                 })}
                 label="Номер телефона"
                 variant="standard"
+                size={isMobile ? "small" : "medium"}
                 required
                 error={!!errors.phone}
                 helperText={errors.phone?.message}
                 fullWidth
+                sx={{ mb: isMobile ? 1 : 2 }}
               />
             )}
           />
@@ -306,25 +364,41 @@ export const RegistrationPage = () => {
                 {...field}
                 label="E-mail"
                 variant="standard"
+                size={isMobile ? "small" : "medium"}
                 required
                 error={!!errors.email}
                 helperText={errors.email?.message}
                 fullWidth
+                sx={{ mb: isMobile ? 1 : 2 }}
               />
             )}
           />
 
           {serverError && (
-            <Alert severity="error" sx={{ width: "100%", mt: 2 }}>
+            <Alert
+              severity="error"
+              sx={{
+                width: "100%",
+                mt: isMobile ? 1 : 2,
+                fontSize: isMobile ? "0.75rem" : "0.875rem",
+              }}
+            >
               {serverError}
             </Alert>
           )}
 
-          <Box sx={{ mt: 5, display: "flex", justifyContent: "center" }}>
+          <Box sx={{ mt: { xs: 3, sm: 5 }, display: "flex", justifyContent: "center" }}>
             <OutlinedButton
               onClick={handleSubmit(onSubmit)}
-              disabled={!isFormValid}
-              sx={{ gap: 1 }}
+              disabled={!isFormValid || claimId === null}
+              sx={{
+                gap: 1,
+                padding: { xs: "6px 12px", sm: "8px 16px" },
+                fontSize: { xs: "0.875rem", sm: "1rem" },
+                "&:hover": {
+                  backgroundColor: theme.palette.brand.backgroundLight,
+                },
+              }}
             >
               Продолжить
             </OutlinedButton>

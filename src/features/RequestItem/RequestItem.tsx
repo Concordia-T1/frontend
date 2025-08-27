@@ -1,51 +1,25 @@
-import {
-  TableCell,
-  TableRow,
-  Checkbox,
-  IconButton,
-  Chip,
-  Box,
-} from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
+import { TableCell, TableRow, Chip, Box } from "@mui/material";
 import { theme } from "../../app/providers/ThemeProvider/config/theme.ts";
 import { useNavigate } from "react-router-dom";
 import React from "react";
-
-interface Request {
-  id: string;
-  date: string;
-  email: string;
-  status:
-    | "STATUS_QUEUED"
-    | "STATUS_WAITING"
-    | "STATUS_CONSENT"
-    | "STATUS_REFUSED"
-    | "STATUS_TIMEOUT";
-  is_viewed: boolean;
-}
+import type { Request, RequestAdmin } from "../../app/types.ts";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
 
 interface RequestItemProps {
-  request: Request;
-  isSelected: boolean;
-  onSelect: (id: string) => void;
-  onDelete: (id: string) => void;
+  request: Request | RequestAdmin;
+  isAdmin?: boolean;
 }
 
 export const RequestItem = ({
-  request,
-  isSelected,
-  onSelect,
-  onDelete,
-}: RequestItemProps) => {
+                              request,
+                              isAdmin = false,
+                            }: RequestItemProps) => {
   const navigate = useNavigate();
 
   const handleRowClick = (event: React.MouseEvent<HTMLTableRowElement>) => {
     const target = event.target as HTMLElement;
-    if (
-      target.closest('input[type="checkbox"]') ||
-      target.closest(".MuiChip-root") ||
-      target.closest(".MuiIconButton-root")
-    ) {
+    if (target.closest(".MuiChip-root")) {
       return;
     }
     navigate(`/request/${request.id}`);
@@ -56,7 +30,6 @@ export const RequestItem = ({
     STATUS_WAITING: "Ожидание",
     STATUS_CONSENT: "Согласие",
     STATUS_REFUSED: "Отказ",
-    STATUS_TIMEOUT: "Таймаут",
   };
 
   const statusColors: Record<Request["status"], string> = {
@@ -64,11 +37,21 @@ export const RequestItem = ({
     STATUS_WAITING: theme.palette.brand.pastelOrange,
     STATUS_CONSENT: theme.palette.brand.pastelGreen,
     STATUS_REFUSED: theme.palette.brand.pastelRed,
-    STATUS_TIMEOUT: theme.palette.brand.pastelBlue,
   };
 
   const isResponseReceived =
     request.status === "STATUS_CONSENT" || request.status === "STATUS_REFUSED";
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "—";
+    try {
+      // Если пришла ISO-строка → форматируем
+      return format(new Date(dateString), "dd.MM.yyyy", { locale: ru });
+    } catch {
+      // Если сервер уже вернул готовую дату → просто показываем
+      return dateString;
+    }
+  };
 
   return (
     <TableRow
@@ -83,24 +66,18 @@ export const RequestItem = ({
       onClick={handleRowClick}
     >
       <TableCell
-        padding="checkbox"
         sx={{
-          width: { xs: "10%", sm: "60px" },
-          paddingLeft: { xs: "12px", sm: "20px" },
+          width: { xs: "25%", sm: "120px" },
+          fontFamily: '"ALS HAUSS", sans-serif',
+          fontSize: 14,
+          fontVariantNumeric: "tabular-nums",
         }}
       >
-        <Checkbox
-          checked={isSelected}
-          onChange={() => onSelect(request.id)}
-          color="primary"
-        />
-      </TableCell>
-      <TableCell sx={{ width: { xs: "20%", sm: "100px" } }}>
-        {request.date}
+        {formatDate(request.date)}
       </TableCell>
       <TableCell
         sx={{
-          width: { xs: "40%", sm: "150px" },
+          width: { xs: "35%", sm: "180px" },
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
@@ -108,6 +85,18 @@ export const RequestItem = ({
       >
         {request.email}
       </TableCell>
+      {isAdmin && (
+        <TableCell
+          sx={{
+            width: { xs: "30%", sm: "180px" },
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {"sender" in request ? request.sender : ""}
+        </TableCell>
+      )}
       <TableCell
         sx={{
           width: { xs: "30%", sm: "200px" },
@@ -138,21 +127,6 @@ export const RequestItem = ({
             }}
           />
         )}
-      </TableCell>
-      <TableCell sx={{ width: { xs: "10%", sm: "30px" } }}>
-        <IconButton
-          onClick={() => onDelete(request.id)}
-          sx={{
-            color: theme.palette.brand.grayLight,
-            transition: "0.5s",
-            "&:hover": {
-              backgroundColor: theme.palette.brand.backgroundLight,
-              color: theme.palette.brand.grayDark,
-            },
-          }}
-        >
-          <DeleteIcon />
-        </IconButton>
       </TableCell>
     </TableRow>
   );

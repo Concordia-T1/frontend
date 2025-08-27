@@ -43,10 +43,8 @@ export const CreatingUserPage = () => {
         "http://localhost:5173/api/auth-service/v1/accounts/create",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
           credentials: "include",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: formData.email,
             role: formData.role === "ADMIN" ? "ROLE_ADMIN" : "ROLE_MANAGER",
@@ -65,7 +63,6 @@ export const CreatingUserPage = () => {
       }
 
       setRefreshTrigger();
-
       navigate("/users");
     } catch (err: any) {
       setError(err.message || "Ошибка соединения с сервером");
@@ -78,7 +75,7 @@ export const CreatingUserPage = () => {
     <Box
       sx={{
         p: { xs: 1, sm: 2 },
-        maxWidth: "600px",
+        maxWidth: { xs: "80%", sm: "80%", md: "600px" },
         margin: "0 auto",
         boxSizing: "border-box",
         display: "flex",
@@ -91,7 +88,7 @@ export const CreatingUserPage = () => {
         sx={{
           width: "100%",
           mb: 2,
-          mt: 4,
+          mt: { xs: 2, sm: 4 },
           display: "flex",
           alignItems: "center",
         }}
@@ -107,7 +104,7 @@ export const CreatingUserPage = () => {
             },
           }}
         >
-          <ArrowBackIcon />
+          <ArrowBackIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
         </IconButton>
         <Typography
           variant="h5"
@@ -116,7 +113,7 @@ export const CreatingUserPage = () => {
             textAlign: "center",
             color: theme.palette.brand.primary,
             fontWeight: 500,
-            fontSize: "24px",
+            fontSize: { xs: "18px", sm: "24px" },
             textTransform: "uppercase",
           }}
         >
@@ -125,7 +122,14 @@ export const CreatingUserPage = () => {
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2, width: "100%" }}>
+        <Alert
+          severity="error"
+          sx={{
+            mb: 2,
+            width: "100%",
+            fontSize: { xs: "14px", sm: "16px" },
+          }}
+        >
           {error}
         </Alert>
       )}
@@ -134,20 +138,28 @@ export const CreatingUserPage = () => {
         sx={{
           display: "flex",
           flexDirection: "column",
-          gap: 2,
+          gap: { xs: 1.5, sm: 2 },
           width: "100%",
-          mt: 4,
+          mt: { xs: 2, sm: 4 },
         }}
       >
         <Select
-          label="Роль"
           value={formData.role}
           onChange={() => handleRoleChange}
           variant="standard"
           fullWidth
+          sx={{
+            "& .MuiSelect-select": {
+              fontSize: { xs: "14px", sm: "16px" },
+            },
+          }}
         >
-          <MenuItem value="MANAGER">Обычный менеджер</MenuItem>
-          <MenuItem value="ADMIN">Админ</MenuItem>
+          <MenuItem value="MANAGER" sx={{ fontSize: { xs: "14px", sm: "16px" } }}>
+            Обычный менеджер
+          </MenuItem>
+          <MenuItem value="ADMIN" sx={{ fontSize: { xs: "14px", sm: "16px" } }}>
+            Админ
+          </MenuItem>
         </Select>
         <TextField
           label="E-mail"
@@ -158,6 +170,10 @@ export const CreatingUserPage = () => {
           required
           fullWidth
           variant="standard"
+          sx={{
+            "& .MuiInputLabel-root": { fontSize: { xs: 14, sm: 16 } },
+            "& .MuiInputBase-input": { fontSize: { xs: 14, sm: 16 } },
+          }}
         />
         <TextField
           label="Пароль"
@@ -168,11 +184,19 @@ export const CreatingUserPage = () => {
           variant="standard"
           required
           fullWidth
+          sx={{
+            "& .MuiInputLabel-root": { fontSize: { xs: 14, sm: 16 } },
+            "& .MuiInputBase-input": { fontSize: { xs: 14, sm: 16 } },
+          }}
         />
         <FilledButton
           onClick={handleSubmit}
           disabled={!formData.email || !formData.password || loading}
-          sx={{ mt: 2 }}
+          sx={{
+            mt: { xs: 1, sm: 2 },
+            fontSize: { xs: 14, sm: 16 },
+            padding: { xs: "8px 16px", sm: "10px 20px" },
+          }}
         >
           {loading ? "Создание..." : "Создать"}
         </FilledButton>

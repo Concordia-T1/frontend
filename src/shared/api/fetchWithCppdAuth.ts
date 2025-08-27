@@ -20,7 +20,7 @@ export const fetchWithCppdAuth = async <T>(
       `[fetchWithCppdAuth] Начало запроса: ${options.method || "GET"} ${fullUrl}`
     );
     console.log("[fetchWithCppdAuth] Заголовки:", options.headers || {});
-    console.log("[fetchWithCppdAuth] Параметры:", options.params || {});
+    console.log("[fetchWithCppdAuth] Дата:", options.data || {});
   }
 
   const headers: Record<string, string> = {
@@ -74,7 +74,6 @@ export const fetchWithCppdAuth = async <T>(
       case 401:
         errorMessage = "Сессия истекла. Пожалуйста, войдите заново.";
         if (navigate) {
-          // Вызываем logout только если navigate предоставлен
           useAuthStore.getState().logout(navigate);
         }
         break;

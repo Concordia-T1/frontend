@@ -4,16 +4,12 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  Checkbox,
   Paper,
   TableContainer,
 } from "@mui/material";
-import React, { useState } from "react";
 import { UserItem } from "../../features/UserItem/UserItem.tsx";
 import { theme } from "../../app/providers/ThemeProvider/config/theme.ts";
-import type { User } from "../../app/types.ts"
-
-
+import type { User } from "../../app/types.ts";
 
 interface UsersTableProps {
   users: User[];
@@ -24,26 +20,6 @@ interface UsersTableProps {
 }
 
 export const UsersTable = ({ users, onStateChange }: UsersTableProps) => {
-  const [selected, setSelected] = useState<string[]>([]);
-
-  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.checked) {
-      setSelected(users.map((user) => user.id));
-    } else {
-      setSelected([]);
-    }
-  };
-
-  const handleSelect = (id: string) => {
-    setSelected((prev) =>
-      prev.includes(id)
-        ? prev.filter((selectedId) => selectedId !== id)
-        : [...prev, id]
-    );
-  };
-
-  const isAllSelected = users.length > 0 && selected.length === users.length;
-
   return (
     <TableContainer
       component={Paper}
@@ -60,24 +36,10 @@ export const UsersTable = ({ users, onStateChange }: UsersTableProps) => {
       <Table sx={{ tableLayout: "auto" }}>
         <TableHead>
           <TableRow>
-            <TableCell
-              padding="checkbox"
-              sx={{
-                width: { xs: "10%", sm: "40px" },
-                paddingLeft: { xs: "12px", sm: "20px" },
-              }}
-            >
-              <Checkbox
-                checked={isAllSelected}
-                onChange={handleSelectAll}
-                indeterminate={selected.length > 0 && !isAllSelected}
-                color="primary"
-              />
-            </TableCell>
             <TableCell sx={{ width: { xs: "80%", sm: "auto" } }}>
               E-mail
             </TableCell>
-            <TableCell sx={{ width: { xs: "10%", sm: "40px" } }} />
+            <TableCell sx={{ width: { xs: "20%", sm: "80px" } }} />
           </TableRow>
         </TableHead>
         <TableBody>
@@ -85,8 +47,6 @@ export const UsersTable = ({ users, onStateChange }: UsersTableProps) => {
             <UserItem
               key={user.id}
               user={user}
-              isSelected={selected.includes(user.id)}
-              onSelect={handleSelect}
               onStateChange={onStateChange}
             />
           ))}

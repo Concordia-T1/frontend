@@ -1,7 +1,6 @@
 import {
   TableCell,
   TableRow,
-  Checkbox,
   IconButton,
   Box,
   Dialog,
@@ -25,84 +24,57 @@ interface User {
 
 interface UserItemProps {
   user: User;
-  isSelected: boolean;
-  onSelect: (id: string) => void;
   onStateChange: (
     id: string,
     newState: "STATE_ENABLED" | "STATE_DISABLED"
   ) => void;
 }
 
-// TODO: Добавить плашку для восстановления прав
-
-export const UserItem = ({
-  user,
-  isSelected,
-  onSelect,
-  onStateChange,
-}: UserItemProps) => {
+export const UserItem = ({ user, onStateChange }: UserItemProps) => {
   const navigate = useNavigate();
-  const [openDialog, setOpenDialog] = useState(false);
+  const [openDisableDialog, setOpenDisableDialog] = useState(false);
+  const [openEnableDialog, setOpenEnableDialog] = useState(false); // New state for enable dialog
   const [error, setError] = useState<string | null>(null);
 
-  const handleOpenDialog = () => {
-    setOpenDialog(true);
-  };
+  const handleOpenDisableDialog = () => setOpenDisableDialog(true);
+  const handleCloseDisableDialog = () => setOpenDisableDialog(false);
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-  };
+  const handleOpenEnableDialog = () => setOpenEnableDialog(true); // Open enable dialog
+  const handleCloseEnableDialog = () => setOpenEnableDialog(false); // Close enable dialog
 
   const handleDisable = async () => {
     try {
-      console.log(
-        `Sending request to /accounts/${user.id}/update-state with state: STATE_DISABLED`
-      );
       const response = await fetchWithAuth(
         `/accounts/${user.id}/update-state`,
         {
           method: "POST",
-          data: {
-            state: "STATE_DISABLED",
-          },
+          data: { state: "STATE_DISABLED" },
         },
         navigate
       );
 
-      console.log("Disable response:", response.data);
-
       if (!response.ok) {
-        setError(
-          response.detail || "Ошибка при отключении прав пользователя"
-        );
+        setError(response.detail || "Ошибка при отключении прав пользователя");
         return;
       }
 
       onStateChange(user.id, "STATE_DISABLED");
-      setOpenDialog(false);
-    } catch (err: unknown) {
+      setOpenDisableDialog(false);
+    } catch {
       setError("Ошибка при отключении прав пользователя");
-      console.error("Disable error:", err);
     }
   };
 
   const handleEnable = async () => {
     try {
-      console.log(
-        `Sending request to /accounts/${user.id}/update-state with state: STATE_ENABLED`
-      );
       const response = await fetchWithAuth(
         `/accounts/${user.id}/update-state`,
         {
           method: "POST",
-          data: {
-            state: "STATE_ENABLED",
-          },
+          data: { state: "STATE_ENABLED" },
         },
         navigate
       );
-
-      console.log("Enable response:", response.data);
 
       if (!response.ok) {
         setError(
@@ -112,9 +84,9 @@ export const UserItem = ({
       }
 
       onStateChange(user.id, "STATE_ENABLED");
-    } catch (err: unknown) {
+      setOpenEnableDialog(false); // Close dialog on success
+    } catch {
       setError("Ошибка при восстановлении прав пользователя");
-      console.error("Enable error:", err);
     }
   };
 
@@ -127,34 +99,19 @@ export const UserItem = ({
         }}
       >
         <TableCell
-          padding="checkbox"
-          sx={{
-            width: { xs: "10%", sm: "40px" },
-            paddingLeft: { xs: "12px", sm: "20px" },
-          }}
-        >
-          <Checkbox
-            checked={isSelected}
-            onChange={() => onSelect(user.id)}
-            color="primary"
-          />
-        </TableCell>
-        <TableCell
           sx={{
             width: { xs: "80%", sm: "250px" },
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
+            paddingLeft: 5,
           }}
         >
           {user.email}
         </TableCell>
         <TableCell
           sx={{
-            width: {
-              xs: "10%",
-              sm: "40px",
-            },
+            width: { xs: "20%", sm: "80px" },
             textAlign: "right",
           }}
         >
@@ -162,7 +119,7 @@ export const UserItem = ({
             <Button
               variant="text"
               size="small"
-              onClick={handleEnable}
+              onClick={handleOpenEnableDialog} // Open enable dialog
               sx={{
                 color: theme.palette.brand.lightBlue,
                 transition: "0.5s",
@@ -176,7 +133,7 @@ export const UserItem = ({
             </Button>
           ) : (
             <IconButton
-              onClick={handleOpenDialog}
+              onClick={handleOpenDisableDialog}
               sx={{
                 color: theme.palette.brand.grayLight,
                 transition: "0.5s",
@@ -191,27 +148,40 @@ export const UserItem = ({
           )}
         </TableCell>
       </TableRow>
+
       {error && (
         <Box sx={{ color: theme.palette.brand.pastelRed, mt: 1, ml: 2 }}>
           {error}
         </Box>
       )}
-      <Dialog
-        open={openDialog}
-        onClose={handleCloseDialog}
-        aria-labelledby="disable-user-dialog-title"
-      >
-        <DialogTitle id="disable-user-dialog-title">
-          Отобрать права у пользователя?
-        </DialogTitle>
+
+      {/* Disable Rights Dialog */}
+      <Dialog open={openDisableDialog} onClose={handleCloseDisableDialog}>
+        <DialogTitle>Отобрать права у пользователя?</DialogTitle>
         <DialogContent>
           <DialogContentText>
             Вы уверены, что хотите отобрать права у пользователя {user.email}?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Нет</Button>
+          <Button onClick={handleCloseDisableDialog}>Нет</Button>
           <Button onClick={handleDisable} color="primary" autoFocus>
+            Да
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Enable Rights Dialog */}
+      <Dialog open={openEnableDialog} onClose={handleCloseEnableDialog}>
+        <DialogTitle>Восстановить права пользователя?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Вы уверены, что хотите восстановить права пользователя {user.email}?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEnableDialog}>Нет</Button>
+          <Button onClick={handleEnable} color="primary" autoFocus>
             Да
           </Button>
         </DialogActions>
