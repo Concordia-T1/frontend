@@ -12,6 +12,3 @@ build_backend:
     - docker build -t $DOCKER_USERNAME/$DOCKER_IMAGE:$CI_COMMIT_SHA .
     - docker tag $DOCKER_USERNAME/$DOCKER_IMAGE:$CI_COMMIT_SHA $DOCKER_USERNAME/$DOCKER_IMAGE:latest
     - docker push $DOCKER_USERNAME/$DOCKER_IMAGE:latest
-    
-  only:
-    - main
