@@ -2,14 +2,16 @@ stages:
   - build
 
 variables:
-  DOCKER_IMAGE: "it-camp.innoca.local:5005/team-34-concordia/fron"
+  DOCKER_USERNAME: alexeykarakcheev
+  DOCKER_IMAGE: frontend
 
 build_backend:
   stage: build
   script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker build -t $DOCKER_IMAGE:$CI_COMMIT_SHA .
-    - docker tag $DOCKER_IMAGE:$CI_COMMIT_SHA $DOCKER_IMAGE:latest
-    - docker push $DOCKER_IMAGE:$CI_COMMIT_SHA
-    - docker push $DOCKER_IMAGE:latest
-
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - docker build -t $DOCKER_USERNAME/$DOCKER_IMAGE:$CI_COMMIT_SHA .
+    - docker tag $DOCKER_USERNAME/$DOCKER_IMAGE:$CI_COMMIT_SHA $DOCKER_USERNAME/$DOCKER_IMAGE:latest
+    - docker push $DOCKER_USERNAME/$DOCKER_IMAGE:latest
+    
+  only:
+    - main
