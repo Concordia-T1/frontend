@@ -1,0 +1,23 @@
+spec:
+  inputs:
+    # These are examples of inputs.
+    job_name:
+      default: job-template
+    image:
+      default: busybox:latest
+    stage:
+      default: test
+
+---
+# This is an example of a job using inputs
+# use variables with this syntax : $[[ inputs.xxx ]]
+$[[ inputs.job_name ]]:
+  image: $[[ inputs.image ]]
+  stage: $[[ inputs.stage ]]
+  script:
+    - echo "Starting job $[[ inputs.job_name ]]"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - when: always
