@@ -1,44 +1,14 @@
-workflow:
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
-      when: never
-    - when: always
-
-include:
-  # include the component located in the current project from the current SHA
-  - component: $CI_SERVER_FQDN/$CI_PROJECT_PATH/my-component@$CI_COMMIT_SHA
-    inputs:
-      job_name: "component job of my-component"
-      stage: build
-
 stages:
   - build
-  - test
-  - release
 
-ensure-job-added:
-  stage: test
-  image: badouralix/curl-jq
-  rules:
-    # project must be public for `curl` to access the API; using `CI_JOB_TOKEN` is insufficient!
-    - if: $CI_PROJECT_VISIBILITY != "public"
-      when: never
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
-      when: never
-    - when: always
-  script: |
-    url="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/pipelines/${CI_PIPELINE_ID}/jobs"
-    curl --fail --show-error --silent "$url" |
-    jq --exit-status 'map(select(.name | contains("component job of my-component"))) | length >= 1'
+variables:
+  DOCKER_USERNAME: alexeykarakcheev
+  DOCKER_IMAGE: frontend
 
-create-release:
-  stage: release
-  image: registry.gitlab.com/gitlab-org/release-cli:latest
-  rules:
-    - if: $CI_COMMIT_TAG
-  script: echo "Creating release $CI_COMMIT_TAG"
-  release:
-    tag_name: $CI_COMMIT_TAG
-    description: "Release $CI_COMMIT_TAG of components repository $CI_PROJECT_PATH"
+build_backend:
+  stage: build
+  script:
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - docker build -t $DOCKER_USERNAME/$DOCKER_IMAGE:$CI_COMMIT_SHA .
+    - docker tag $DOCKER_USERNAME/$DOCKER_IMAGE:$CI_COMMIT_SHA $DOCKER_USERNAME/$DOCKER_IMAGE:latest
+    - docker push $DOCKER_USERNAME/$DOCKER_IMAGE:latest
